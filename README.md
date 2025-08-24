@@ -5,94 +5,115 @@
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+### **Chat Pilot Server**
 
-## Description
+-----
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### **Project Title**
 
-## Project setup
+**WhatsApp Chat Pilot**
 
-```bash
-$ npm install
-```
+### **Project Description**
 
-## Compile and run the project
+The WhatsApp Chat Pilot is a specialized chat management system designed for businesses to streamline their communication and automate tasks on WhatsApp. The system consists of two separate servers: a **Chat Pilot** server and a dedicated **Bot Server**. This repository focuses on the **Chat Pilot** server, which serves as the core registration and management platform for companies.
 
-```bash
-# development
-$ npm run start
+The Chat Pilot allows companies to register and manage their communication flows. Once a company is registered, the system assigns a dedicated bot to them. These bots are capable of performing various tasks, including:
 
-# watch mode
-$ npm run start:dev
+  * **Scheduling meetings:** Handling appointment setting directly within WhatsApp chats.
+  * **Providing automated responses:** Offering intelligent, human-like replies based on previous chat history, even during off-hours.
+  * **Guiding users:** Leading customers through end-to-end deals or assisting patients with suggestions based on their past conversations.
 
-# production mode
-$ npm run start:prod
-```
+The bot's replies are simple, readable, and designed to provide a seamless, human-like experience. This entire system aims to provide an efficient and scalable solution for business-to-customer communication on the WhatsApp platform.
 
-## Run tests
+### **Core Technologies**
 
-```bash
-# unit tests
-$ npm run test
+The Chat Pilot server is built with the following technologies:
 
-# e2e tests
-$ npm run test:e2e
+  * **Backend:** [NestJS](https://nestjs.com/)
+  * **Database:** [PostgreSQL](https://www.postgresql.org/)
+  * **ORM:** [Prisma](https://www.prisma.io/)
+  * **API Documentation:** [Swagger](https://swagger.io/)
+  * **Cloud Services:** [Supabase](https://supabase.com/)
 
-# test coverage
-$ npm run test:cov
-```
+### **Prerequisites**
 
-## Deployment
+Before you begin, ensure you have the following installed on your system:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+  * [Node.js](https://nodejs.org/) (version 18 or later is recommended)
+  * [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
+  * [PostgreSQL](https://www.postgresql.org/download/)
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### **Getting Started**
+
+Follow these steps to get the project up and running on your local machine.
+
+#### 1\. Clone the Repository
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+git clone <your-repository-url>
+cd <your-repository-folder>
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+#### 2\. Install Dependencies
 
-## Resources
+```bash
+npm install
+# or
+yarn install
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+#### 3\. Set Up the Database
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+1.  Ensure you have a PostgreSQL server running.
+2.  Create a new, empty database for the project (e.g., `chat_pilot`).
 
-## Support
+#### 4\. Configure Environment Variables
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Create a `.env` file in the root directory of the project and add your database connection details:
 
-## Stay in touch
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/chat_pilot?schema=public"
+# Replace with your actual database credentials and host.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+PORT=3000
+# Add any other API keys or secrets here
+```
 
-## License
+#### 5\. Run Prisma Migrations
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+With your database configured, apply the database schema using Prisma:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+This command will create the tables and relationships defined in your `prisma/schema.prisma` file.
+
+#### 6\. Run the Application
+
+Now you can start the NestJS server:
+
+```bash
+npm run start:dev
+# or
+yarn start:dev
+```
+
+The server will be available at `http://localhost:3000`.
+
+### **API Documentation**
+
+The project uses **Swagger** for API documentation. You can access the live documentation at:
+
+`http://localhost:3000/api`
+
+This page provides a clear overview of all available endpoints, their request/response schemas, and allows you to test them directly from your browser.
+
+### **Author**
+
+This project was created and is maintained by **M. Arslan**.
+
+  * **LinkedIn:** [linkedin.com/in/m-arslan-aa21a0246](https://www.linkedin.com/in/m-arslan-aa21a0246/)
+  * **GitHub:** [github.com/Arslanarsal](https://github.com/Arslanarsal)
+  * **LeetCode:** [leetcode.com/u/arslanarsal](https://leetcode.com/u/arslanarsal/)
+
