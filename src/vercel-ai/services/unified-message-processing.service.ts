@@ -45,13 +45,14 @@ export class UnifiedMessageProcessingService {
       return null;
     }
 
+    const companyTimezone = company.timezone || 'Etc/UTC';
+    const nowInCompanyTimezone = this.datesHelper.localNow(companyTimezone);
     const dateAugmentedText = `
-          ${text}
-
-          [System message: This message was sent ${this.datesHelper.localWeekdayName()} ${this.datesHelper.localNow()}
-          If you need to know the names of the next days, use these values:
-          ${this.datesHelper.getDateAliases().join(', ')}]
-          `;
+      ${text}
+      [mensagem do sistema: Esta mensagem foi enviada ${this.datesHelper.localWeekdayName(nowInCompanyTimezone)} ${nowInCompanyTimezone.toISO()}
+      se precisa saber os nomes dos dias próximos, utiliza estes valores:
+      ${this.datesHelper.getDateAliases(companyTimezone).join(', ')}]
+      `;
 
     // if (company.llm_stack === LlmStack.AI_SDK ) {
     //   this.logger.log(`Using Gemini for company ${clinicId}`)

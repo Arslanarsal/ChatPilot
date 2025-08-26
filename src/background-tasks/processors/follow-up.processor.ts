@@ -92,13 +92,13 @@ export class FollowUpProcessor extends WorkerHost {
               },
             });
             if (messages.length > 0) {
-              // const booking = await this.contactService.detectBookingStatusChange(contact);
-              // if (booking.status === 'booked') {
-              //   this.logger.log(
-              //     `FollowUpConfigProcessor :: Skipping contact ${contact.name} booking status :${booking.status}`,
-              //   );
-              //   continue;
-              // }
+              const booking = await this.contactService.detectBookingStatusChange(contact);
+              if (booking.status === 'booked') {
+                this.logger.log(
+                  `FollowUpConfigProcessor :: Skipping contact ${contact.name} booking status :${booking.status}`,
+                );
+                continue;
+              }
             }
           }
           if (!contact.is_bot_activated || !clinic?.is_bot_activated) {
@@ -214,9 +214,9 @@ export class FollowUpProcessor extends WorkerHost {
     const companies = await this.prisma.companies.findMany({
       where: {
         is_bot_activated: true,
-        // timezone: {
-        //   in: activeFollowUpTz,
-        // },
+        timezone: {
+          in: activeFollowUpTz,
+        },
       },
       include: {
         follow_up_configs: {
@@ -433,7 +433,7 @@ AND    contacts.needs_review IS false
             OR: [
               { lead_status_id: null },
               { lead_status_id: { in: company.smart_follow_up_configs[0].target_lead_status_ids } },
-            ], 
+            ],
             next_smart_follow_up: null,
             thread_id: { not: null },
             nr_immediate_followups_sent: { gte: noOfImmediateFupsSent },
@@ -628,7 +628,4 @@ remaining follow ups to be sent until stop date: ${smartFollowUpsConfig.follow_u
 ${chatHistory}
 </chat history>`;
   }
-
-  
-  
 }
