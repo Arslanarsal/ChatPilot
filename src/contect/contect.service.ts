@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { companies, contacts, messages, whatsapp_connector_server } from '@prisma/client';
+import { companies, contacts, messages, Prisma, whatsapp_connector_server } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   AiChatMessage,
@@ -11,13 +11,19 @@ import {
 } from 'src/utils/constant/types';
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service';
 import { WhatsAppConnectorType } from 'src/whatsapp-connector/dto/create-whatsapp-connector.dto';
+import { PromptHelper } from 'src/utils/services/prompt.helper';
+import { AiGoogleService } from 'src/vercel-ai/services/ai-google.service';
+import { DatesHelper } from 'src/utils/services/dates.service';
 
 @Injectable()
 export class ContectService {
   private readonly logger = new Logger(ContectService.name);
   constructor(
-    private prisma: PrismaService,
-    private whatsBailey: WhatsBaileyService,
+    private readonly prisma: PrismaService,
+    private readonly whatsBailey: WhatsBaileyService,
+    private readonly promptHelper: PromptHelper,
+    private readonly aiGoogleService: AiGoogleService,
+    private readonly datesHelper: DatesHelper,
   ) {}
 
   async getOrCreateContact(
@@ -219,7 +225,7 @@ export class ContectService {
       UPDATE "contacts" 
       SET 
     
-      custom_data = NULL, -- JSON field
+      custom_data = NULL,
       is_bot_activated = true,
       is_replies_activated = true,
       thread_id = NULL,
@@ -339,6 +345,23 @@ export class ContectService {
     return messages;
   }
 
+  async getAiChatHistoryWithTimeStamps(
+    contactId: number,
+    onlyProcessed: boolean = false,
+  ): Promise<AiChatMessage[]> {
+    const messages = await this.getAllMessages(contactId, onlyProcessed);
+    const chatHistory = messages.map((msg) => ({
+      role: msg.author_type === AUTHOR_TYPE.HUMAN ? 'user' : 'assistant',
+      content: [
+        {
+          type: 'text',
+          text: `<message>${msg.message} </message> <timestamp>${msg.sent_at}</timestamp>`,
+        },
+      ],
+    }));
+    return chatHistory;
+  }
+
   async getAiChatHistory(
     contactId: number,
     onlyProcessed: boolean = false,
@@ -356,52 +379,86 @@ export class ContectService {
     return chatHistory;
   }
 
-  // async detectBookingStatusChange(contact: Contact): Promise<OpenAIScheduleEventPayload> {
-  //   const clinic = contact.companies;
+  cleanAndParseJson(rawResponse) {
+    try {
+      if (typeof rawResponse === 'object') {
+        return rawResponse; // Already parsed
+      }
 
-  //   if (!contact.thread_id) {
-  //     this.logger.warn(`detectBookingStatusChange :: Skipping ${contact.name}: Missing thread_id.`);
-  //     return {
-  //       status: 'no_event',
-  //       date: null,
-  //     };
-  //   }
+      if (typeof rawResponse === 'string') {
+        // Remove Markdown-style code fences
+        const cleaned = rawResponse
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/i, '')
+          .replace(/```$/g, '')
+          .trim();
 
-  //   const chatHistory = await this.getAiChatHistory(contact.id);
-  //   const prompt = this.promptHelper.detect_booking_status_change_prompt(
-  //     contact as any,
-  //     chatHistory,
-  //   );
-  //   const content = await this.aiGoogleService.processPromptsUsingOpenAI(
-  //     contact,
-  //     chatHistory,
-  //     prompt,
-  //     prompt,
-  //   );
+        // Try to parse cleaned string
+        return JSON.parse(cleaned);
+      }
+    } catch (err) {
+      console.error('Failed to parse assistant response:', err);
+    }
 
-  //   const scheduleEvent: OpenAIScheduleEventPayload = this.cleanAndParseJson(content);
-  //   this.logger.log(`after cleaning content ${JSON.stringify(scheduleEvent)}`);
-  //   if (scheduleEvent.status === 'booked') {
-  //     scheduleEvent.date = this.datesHelper.interpretAsLocalTime(
-  //       new Date(scheduleEvent.date as string),
-  //       clinic.timezone as string,
-  //     );
-  //     this.updateContact(contact.id, {
-  //       schedule_event: {
-  //         date: scheduleEvent.date,
-  //         success: true,
-  //         error: null,
-  //         provider: clinic.crm_provider,
-  //       },
-  //     });
-  //   } else if (scheduleEvent.status === 'cancelled') {
-  //     this.updateContact(contact.id, {
-  //       schedule_event: Prisma.DbNull as any,
-  //       crm_appointment_at: null,
-  //       crm_appointment_id: null,
-  //     });
-  //   }
+    // Fallback if parsing fails
+    return { status: 'no_event', date: null };
+  }
 
-  //   return scheduleEvent;
-  // }
+  async detectBookingStatusChange(contact: Contact): Promise<OpenAIScheduleEventPayload> {
+    try {
+      const clinic = contact.companies;
+
+      if (!contact.thread_id) {
+        this.logger.warn(
+          `detectBookingStatusChange :: Skipping ${contact.name}: Missing thread_id.`,
+        );
+        return {
+          status: 'no_event',
+          date: null,
+        };
+      }
+
+      const chatHistory = await this.getAiChatHistoryWithTimeStamps(contact.id);
+      const prompt = this.promptHelper.detect_booking_status_change_prompt(clinic);
+      this.logger.log('detectBookingStatusChange', { chatHistory, prompt });
+      const content = await this.aiGoogleService.processPromptsUsingOpenAI(
+        contact,
+        chatHistory,
+        prompt,
+        prompt,
+      );
+
+      const scheduleEvent: OpenAIScheduleEventPayload = this.cleanAndParseJson(content);
+
+      if (scheduleEvent.status === 'booked') {
+        scheduleEvent.date = this.datesHelper.interpretAsLocalTime(
+          new Date(scheduleEvent.date as string),
+          clinic.timezone as string,
+        );
+        this.updateContact(contact.id, {
+          schedule_event: {
+            date: scheduleEvent.date,
+            success: true,
+            error: null,
+            provider: clinic.crm_provider,
+          },
+        });
+      } else if (scheduleEvent.status === 'cancelled') {
+        this.updateContact(contact.id, {
+          schedule_event: Prisma.DbNull as any,
+          crm_appointment_at: null,
+          crm_appointment_id: null,
+        });
+      }
+
+      return scheduleEvent;
+    } catch (error) {
+      this.logger.log('detectBookingStatusChange', { contact, error });
+      return { status: 'no_event', date: null };
+    }
+  }
+
+  async sendMessageToDevs(contact: Contact, text: string): Promise<void> {
+    await this._sendMessage(contact, Number('923252679212'), text);
+  }
 }

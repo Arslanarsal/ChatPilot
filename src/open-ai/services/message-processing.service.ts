@@ -22,46 +22,12 @@ export class MessageProcessingService {
     try {
       const clinic = contact.companies as companies;
 
-      // Handle special commands
-      // if (text === '/reset') {
-      //   await this.contactService.updateContact(contact.id, {
-      //     thread_id: null,
-      //   })
-      //   return 'Thread cleared. Please start the conversation again'
-      // }
-
-      // if (text.toLowerCase() === 'reiniciar') {
-      //   await this.contactService.reiniciar(contact.id)
-      //   return 'Perfeito! 🚀 Você reiniciou a conversa com sucesso. Agora pode começar de novo e enviar sua próxima pergunta ou mensagem. Estou aqui para ajudar! 😊'
-      //   // return `Perfect! 🚀 You have successfully restarted the conversation. Now you can start again and send your next question or message. I'm here to help! 😊`;
-      // }
-      //      // Update contact properties
-      // const updatedContact = await this.contactService.updateContact(contact.id, {
-      //   last_message_received: new Date(),
-      //   total_messages: { increment: 1 },
-      //   next_smart_follow_up: null,
-      //   last_immediate_followup_sent: null,
-      //   nr_immediate_followups_sent: 0,
-      //   nr_smart_followups_sent: 0,
-      //   smart_follow_up_stop_date: null,
-      //   objection: null,
-      //   // lead_status :null
-      // })
-
-      // if (updatedContact.total_messages >= MAX_MESSAGES) {
-      //   if (updatedContact.total_messages === MAX_MESSAGES) {
-      //     return 'Olá! 😊 Você atingiu o número máximo de mensagens permitidas. Para começar uma nova conversa, é só digitar “reiniciar”.'
-      //   }
-      //   return null
-      // }
-
-      // if (updatedContact.needs_review) {
-      //   await this.handleNeedsReview(
-      //     updatedContact as Contact,
-      //     clinic as Clinic,
-      //   )
-      //   return null
-      // }
+      if (text === '/reset') {
+        await this.contactService.updateContact(contact.id, {
+          thread_id: null,
+        });
+        return 'Thread cleared. Please start the conversation again';
+      }
 
       // Handle OpenAI thread processing
       let threadId = contact.thread_id;
@@ -72,10 +38,7 @@ export class MessageProcessingService {
           this.contactService.updateContact(contact.id, {
             thread_id: threadId,
           }),
-          // this.notifyNewConversation(
-          //   contact as Contact,
-          //   clinic as Clinic,
-          // ),
+          this.notifyNewConversation(contact as Contact, clinic as Clinic),
         ]);
       }
 
@@ -104,5 +67,11 @@ export class MessageProcessingService {
 
   private async handleNeedsReview(contact: Contact, clinic: Clinic): Promise<void> {
     await this.openAiToolsService.getContactTools(contact).set_needs_review('true');
+  }
+
+  private async notifyNewConversation(contact: Contact, clinic: Clinic): Promise<void> {
+    const message = `New conversation started with Phone Number ${contact.phone} in clinic ${clinic.id}`;
+    await Promise.all([this.contactService.sendMessageToDevs(contact, message)]);
+    this.logger.log(`New conversation: ${message}`);
   }
 }

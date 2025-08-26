@@ -30,10 +30,10 @@ export class CreateCompanyDto {
   @IsBoolean()
   is_bot_activated?: boolean;
 
-  // @ApiPropertyOptional({ example: 'provider' })
-  // @IsOptional()
-  // @IsString()
-  // calendar_provider?: string
+  @ApiPropertyOptional({ example: 'cal.com' })
+  @IsOptional()
+  @IsString()
+  crm_provider?: string;
 
   // @ApiPropertyOptional({ example: 'api_key' })
   // @IsOptional()
@@ -52,18 +52,18 @@ export class CreateCompanyDto {
   // @Transform(({ value }) => BigInt(value))
   // belle_client_id?: number
 
-  @ApiPropertyOptional({ example: 10 })
+  @ApiPropertyOptional({ example: 2809359 })
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => BigInt(value))
   cal_event_type_id?: number;
 
-  @ApiPropertyOptional({ example: 'event_slug' })
+  @ApiPropertyOptional({ example: 'testing' })
   @IsOptional()
   @IsString()
   cal_event_slug?: string;
 
-  @ApiPropertyOptional({ example: 'api_key' })
+  @ApiPropertyOptional({ example: 'cal_live_f61f372f3a98dac00c08b37c5e051b86' })
   @IsOptional()
   @IsString()
   cal_api_key?: string;

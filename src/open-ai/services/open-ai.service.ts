@@ -155,8 +155,6 @@ export class OpenAiService {
     runId: string,
     toolOutputs: any[],
   ): Promise<OpenAI.Beta.Threads.Run> {
-    // Correct call: Pass runId first, then an object containing both
-    // thread_id and tool_outputs.
     return this.client.beta.threads.runs.submitToolOutputs(runId, {
       thread_id: threadId,
       tool_outputs: toolOutputs,
@@ -169,6 +167,5 @@ export class OpenAiService {
       this.client.beta.threads.runs.cancel(threadId, error.run.id);
       this.logger.warn(`Run ${error.run.id} cancelled due to error`);
     }
-    // this.sentryService.instance().captureException(error);
   }
 }

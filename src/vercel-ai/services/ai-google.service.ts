@@ -3,12 +3,60 @@ import { AiChatMessage, Contact } from 'src/utils/constant/types';
 import { AiToolsService } from './ai-tools.service';
 import { createOpenAI, OpenAIProvider } from '@ai-sdk/openai';
 import { generateText } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 @Injectable()
 export class AiGoogleService {
   private readonly logger = new Logger(AiGoogleService.name);
 
   constructor(private readonly aiToolsService: AiToolsService) {}
+
+  async processMessage(
+    contact: Contact,
+    chatHistory: AiChatMessage[],
+    systemPrompt: string,
+  ): Promise<string | any> {
+    const tools = this.aiToolsService.getContactTools(contact);
+
+    // Validate inputs
+    if (!contact) {
+      throw new Error('Contact is required');
+    }
+
+    if (!systemPrompt) {
+      throw new Error('System prompt is required');
+    }
+
+    try {
+      const google = createGoogleGenerativeAI({
+        apiKey: process.env.GEMINI_API_KEY,
+      });
+
+      this.logger.log('Processing message with Google AI service');
+      this.logger.log('Chat history length:', chatHistory.length);
+
+      const { text, steps } = await generateText({
+        model: google('gemini-2.0-flash'),
+        system: systemPrompt,
+        tools,
+        messages: chatHistory as any,
+        // maxSteps: 5 ,
+      });
+
+      this.logger.log('Successfully generated text response');
+      return text;
+    } catch (error) {
+      this.logger.error('Error in processMessage:', {
+        error: error.message,
+        stack: error.stack,
+        contactId: contact?.id,
+        chatHistoryLength: chatHistory?.length,
+      });
+
+      // Return a meaningful error response instead of undefined
+      throw new Error(`Failed to process message with Google AI: ${error.message}`);
+    }
+  }
 
   async processPromptsUsingOpenAI(
     contact: Contact,

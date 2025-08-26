@@ -13,44 +13,39 @@ export class DatesHelper {
     '4': 'Thursday',
     '5': 'Friday',
     '6': 'Saturday',
-    '0': 'Sunday',
+    '7': 'Sunday',
   };
 
-  localNow(): Date {
-    const nowUTC = DateTime.utc();
-    const converted = nowUTC.setZone(this.TIMEZONE);
-    return converted;
+  public localNow(timezone: string): DateTime {
+    return DateTime.now().setZone(timezone);
   }
 
-  localWeekdayName(timestamp: Date = new Date(this.localNow())): string {
-    return this.PORTUGUESE_DAYS[timestamp.getDay()];
+  public localWeekdayName(dateTime: DateTime): string {
+    return this.PORTUGUESE_DAYS[dateTime.weekday];
   }
 
-  getDateAliases(startDate: Date = new Date(this.localNow()), days: number = 14): string[] {
+  public getDateAliases(timezone: string, days: number = 14): string[] {
+    const startDate = this.localNow(timezone);
     return Array.from({ length: days }, (_, i) => {
-      const currentDate = DateTime.fromJSDate(startDate).plus({ days: i });
-      return `${currentDate.toFormat('yyyy-MM-dd')} ${this.getDateAlias(currentDate.toJSDate())}`;
+      const currentDate = startDate.plus({ days: i });
+      return `${currentDate.toFormat('yyyy-MM-dd')} ${this.getDateAlias(currentDate)}`;
     });
   }
 
-  private getDateAlias(targetDate: Date, referenceDate: Date = new Date(this.localNow())): string {
-    referenceDate.setHours(0, 0, 0, 0);
-    const diffDays = Math.floor(
-      DateTime.fromJSDate(targetDate).diff(DateTime.fromJSDate(referenceDate), 'days').days,
-    );
+  private getDateAlias(targetDate: DateTime): string {
+    const referenceDate = this.localNow(targetDate.zone.name).startOf('day');
+    const diffDays = Math.floor(targetDate.startOf('day').diff(referenceDate, 'days').days);
 
-    if (diffDays === 0) return 'is today, ' + this.localWeekdayName(targetDate);
-    if (diffDays === 1) return 'is tomorrow, ' + this.localWeekdayName(targetDate);
-    if (diffDays === -1) return 'was yesterday, ' + this.localWeekdayName(targetDate);
+    if (diffDays === 0) return 'é hoje, ' + this.localWeekdayName(targetDate);
+    if (diffDays === 1) return 'é amanhã, ' + this.localWeekdayName(targetDate);
 
-    if (diffDays < -1 || diffDays >= 14) {
-      return diffDays > 0 ? `in ${diffDays} days` : `${-diffDays} days ago`;
+    if (diffDays > 1 && diffDays < 7) {
+      return 'é ' + this.localWeekdayName(targetDate);
     }
-
-    if (diffDays < 7) return 'is ' + this.localWeekdayName(targetDate);
-    if (diffDays < 14) return 'is next ' + this.localWeekdayName(targetDate);
-
-    throw new Error('Date is not valid');
+    if (diffDays >= 7 && diffDays < 14) {
+      return 'é próxima/o ' + this.localWeekdayName(targetDate);
+    }
+    return 'é ' + this.localWeekdayName(targetDate);
   }
 
   convertFromZulu(date: Date | string, timezone: string = this.TIMEZONE): Date {
@@ -70,12 +65,15 @@ export class DatesHelper {
 
     return dt.toUTC().toJSDate();
   }
+
   addHours(date: string | Date, hours: number): string {
     return new Date(new Date(date).getTime() + hours * 60 * 60 * 1000).toISOString();
   }
+
   minusHours(date: string | Date, hours: number): string {
     return new Date(new Date(date).getTime() - hours * 60 * 60 * 1000).toISOString();
   }
+
   toHumanDate(dateInput: string | Date): string {
     let dt: DateTime;
 
