@@ -225,7 +225,7 @@ export class ContectService {
       UPDATE "contacts" 
       SET 
     
-      custom_data = NULL, -- JSON field
+      custom_data = NULL,
       is_bot_activated = true,
       is_replies_activated = true,
       thread_id = NULL,
@@ -456,5 +456,9 @@ export class ContectService {
       this.logger.log('detectBookingStatusChange', { contact, error });
       return { status: 'no_event', date: null };
     }
+  }
+
+  async sendMessageToDevs(contact: Contact, text: string): Promise<void> {
+    await this._sendMessage(contact, Number('923252679212'), text);
   }
 }
