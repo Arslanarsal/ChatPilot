@@ -10,7 +10,7 @@ import { PrismaModule } from './prisma/prisma.module'
 import { WebhookModule } from './webhook/webhook.module'
 import { BackgroundTasksModule } from './background-tasks/background-tasks.module'
 import { BullModule } from '@nestjs/bullmq'
-import { OpenAIModule } from './open-ai/open-ai.module'
+import { VercelAiModule } from './vercel-ai/vercel-ai.module'
 import { UtilsModule } from './utils/utils.module'
 import { ContactModule } from './contact/contact.module'
 import { ClinicModule } from './clinic/clinic.module'
@@ -27,7 +27,7 @@ import { WhatsappConnectorModule } from './whatsapp-connector/whatsapp-connector
 
     WebhookModule,
     BackgroundTasksModule,
-    OpenAIModule,
+    VercelAiModule,
     UtilsModule,
     ClinicModule,
     ContactModule,

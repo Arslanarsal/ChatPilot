@@ -33,7 +33,7 @@ export class CompanyController {
     private readonly contactService: ContactService,
     private readonly WaFormattingService: WhatsAppFormatter,
     private readonly ConfigService: ConfigsService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Create Clinic' })
   @ApiBody({
@@ -53,18 +53,18 @@ export class CompanyController {
   }
   @ApiOperation({ summary: 'Send Message from Company to contact' })
   @ApiHeader({
-    name: 'zonic-api-key',
+    name: 'chatPilot-api-key',
     description: 'API Key for authentication',
     required: true,
   })
   @Post(':companyId/contacts/:contactId/send-message')
   async sendMessage(
-    @Headers('zonic-api-key') apiKey: string,
+    @Headers('chatPilot-api-key') apiKey: string,
     @Param('companyId', ParseIntPipe) companyId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
     @Query() data: SendMessageDto,
   ) {
-    if (this.ConfigService.zonicApiKey !== apiKey)
+    if (this.ConfigService.chatPilotApiKey !== apiKey)
       throw new UnprocessableEntityException('invalid api key')
     const contact = await this.contactService.getContactById(contactId)
     if (!contact) throw new UnprocessableEntityException('contact not found')
@@ -90,7 +90,7 @@ export class CompanyController {
           image: image.url,
         })
       } else {
-        await this.contactService.sendMessage(contact as Contact, part,'', AUTHOR_TYPE.BOT, data.source)
+        await this.contactService.sendMessage(contact as Contact, part, '', AUTHOR_TYPE.BOT, data.source)
         messages.push({
           message: part,
         })
@@ -101,16 +101,16 @@ export class CompanyController {
 
   @Post(':companyId/phone/:number/sendMessageByPhone')
   async sendMessageToPhone(
-    @Headers('zonic-api-key') apiKey: string,
+    @Headers('chatPilot-api-key') apiKey: string,
     @Param('companyId', ParseIntPipe) companyId: number,
     @Param('number', ParseIntPipe) number: number,
     @Query() data: SendMessageDto,
   ) {
-    if (this.ConfigService.zonicApiKey !== apiKey)
+    if (this.ConfigService.chatPilotApiKey !== apiKey)
       throw new UnprocessableEntityException('invalid api key')
     const clinic = await this.clinicService.findById(companyId)
     if (!clinic) throw new UnprocessableEntityException('clinic not found')
-    const contact = await this.contactService.getOrCreateContact(clinic,number)
+    const contact = await this.contactService.getOrCreateContact(clinic, number)
     if (!contact) throw new UnprocessableEntityException('contact not found')
 
     const contentParts = this.WaFormattingService.splitMessage(data.message)
@@ -133,7 +133,7 @@ export class CompanyController {
           image: image.url,
         })
       } else {
-        await this.contactService.sendMessage(contact as Contact, part,'', AUTHOR_TYPE.BOT, data.source)
+        await this.contactService.sendMessage(contact as Contact, part, '', AUTHOR_TYPE.BOT, data.source)
         messages.push({
           message: part,
         })
@@ -143,13 +143,13 @@ export class CompanyController {
   }
 
   @Post('number/is-on-whatsapp')
-  
+
   async isOnWhatsApp(
-    @Headers('zonic-api-key') apiKey: string,
-    @Body()  dto: IsOnWhatsappDto,
+    @Headers('chatPilot-api-key') apiKey: string,
+    @Body() dto: IsOnWhatsappDto,
   ) {
     console.log('isOnWhatsApp', dto)
-    if (this.ConfigService.zonicApiKey !== apiKey)
+    if (this.ConfigService.chatPilotApiKey !== apiKey)
       throw new UnprocessableEntityException('invalid api key')
     const clinic = await this.clinicService.findById(dto.company_id)
     if (!clinic) throw new UnprocessableEntityException('clinic not found')

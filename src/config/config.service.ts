@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class ConfigsService {
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService) { }
   get app_port(): number {
     const port = this.configService.get<string>('App.port')
     if (port === undefined) {
@@ -20,10 +20,10 @@ export class ConfigsService {
     return env
   }
 
-  get zonicApiKey(): string {
-    const key = this.configService.get<string>('App.zonicApiKey')
+  get chatPilotApiKey(): string {
+    const key = this.configService.get<string>('App.chatPilotApiKey')
     if (key === undefined) {
-      throw new Error('App.zonicApiKey is not defined')
+      throw new Error('App.chatPilotApiKey is not defined')
     }
     return key
   }

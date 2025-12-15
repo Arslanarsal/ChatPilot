@@ -8,7 +8,7 @@ import { UtilsModule } from 'src/utils/utils.module'
 @Module({
   imports: [
     PrismaModule,
-    UtilsModule,
+    forwardRef(() => UtilsModule),
     forwardRef(() => ContactModule)
   ],
   controllers: [CompanyController],

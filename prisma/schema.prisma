@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model whatsapp_connector_server {
@@ -32,6 +31,8 @@ model companies {
   whatsapp_connector_server_id Int?
   crm_provider                 String?                    @db.VarChar
   wapi_connection_status       Boolean?
+  assistant_id                 Int?
+  assistant_instructions       assistant_instructions?    @relation(fields: [assistant_id], references: [id])
   whatsapp_connector_server    whatsapp_connector_server? @relation(fields: [whatsapp_connector_server_id], references: [id], map: "poc_clinics_companies_whatsapp_connector_server_id_fkey")
   contacts                     contacts[]
   follow_up_configs            follow_up_config[]
@@ -43,9 +44,6 @@ model contacts {
   updated_at               DateTime?          @default(now()) @db.Timestamptz(6)
   name                     String?            @db.VarChar
   phone                    BigInt?
-  pain_points              String[]           @db.VarChar
-  recommended_treatments   String[]           @db.VarChar
-  treatments_of_interest   String[]           @db.VarChar
   is_recommendation_good   Boolean?
   is_willing_to_schedule   Boolean?
   no_scheduling_reason     String?            @db.VarChar
@@ -57,22 +55,19 @@ model contacts {
   appointment_scheduled_on DateTime?          @db.Timestamptz(6)
   total_messages           Int                @default(0)
   needs_review             Boolean            @default(false)
-  custom_data              Json?
   company_id               Int?               @default(1)
   archived_on              DateTime?          @db.Timestamptz(6)
   photo_url                String?            @db.VarChar
   is_bot_activated         Boolean?           @default(true)
   crm_appointment_at       DateTime?          @db.Timestamptz(6)
   crm_appointment_id       String?            @db.VarChar
-  lead_status              Int?
   whatsapp_profile_name    String?
   next_smart_follow_up     DateTime?          @db.Timestamptz(6)
   smart_reminders_sent     Int                @default(0)
   contact_stop_date        DateTime?          @db.Timestamptz(6)
-  objection                String?            @db.VarChar
   is_replies_activated     Boolean?           @default(true)
   latitude                 Float?
-  longitude               Float?
+  longitude                Float?
   companies                companies?         @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "poc_clinics_contacts_company_id_fk")
   messages                 messages[]
   smart_follow_ups         smart_follow_ups[]
@@ -96,22 +91,6 @@ model messages {
   contacts              contacts  @relation(fields: [contact_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model audit_table {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  src_table  String
-  col_name   String
-  old_value  String?
-  new_value  String?
-  record_id  Int?
-  user       String   @default(dbgenerated("CURRENT_USER"))
-  action     String
-  changed_at DateTime @default(now()) @db.Timestamptz(6)
-
-  @@index([changed_at], map: "idx_audit_table_changed_at")
-  @@index([col_name], map: "idx_audit_table_col_name")
-  @@index([src_table], map: "idx_audit_table_src_table")
-}
-
 model follow_up_config {
   id         Int     @id @default(autoincrement())
   company_id Int
@@ -130,4 +109,12 @@ model smart_follow_ups {
   contact_id   Int
   contact      contacts @relation(fields: [contact_id], references: [id])
   is_sent      Boolean  @default(false)
+}
+
+model assistant_instructions {
+  id            Int         @id(map: "poc_assistant_instructions_pkey") @default(autoincrement())
+  model         String?     @default("gpt-4o-mini")
+  temperature   Float?      @default(0.1)
+  system_prompt String?
+  companies     companies[]
 }

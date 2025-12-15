@@ -36,11 +36,6 @@ class EnvironmentVariables {
   @MinLength(1)
   OPENAI_API_KEY: string
 
-  @IsString()
-  @IsOptional()
-  @MinLength(1)
-  SENTRY_URL?: string
-
   @IsDefined()
   @IsString()
   @MinLength(1)
@@ -53,7 +48,7 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   @MinLength(5)
-  ZONIC_API_KEY?: string
+  chatPilot_API_KEY?: string
 }
 
 export function validateConfig(configuration: Record<string, unknown>) {

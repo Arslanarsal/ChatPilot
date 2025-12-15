@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Logger } from '@nestjs/common'
 import { Job } from 'bullmq'
-import { MessageProcessingService } from 'src/open-ai/services/message-processing.service'
+import { UnifiedMessageProcessingService } from 'src/vercel-ai/services/unified-message-processing.service'
 import { BackgroundQueue } from 'src/utils/constants/background.constants'
 import { ContactService } from 'src/contact/contact.service'
 import { AUTHOR_TYPE, Clinic, Contact } from 'src/utils/constants/types'
@@ -13,7 +13,7 @@ export class ReplyProcessor extends WorkerHost {
   private readonly logger = new Logger(ReplyProcessor.name)
   constructor(
     private readonly contactService: ContactService,
-    private readonly messageProcessingService: MessageProcessingService,
+    private readonly messageProcessingService: UnifiedMessageProcessingService,
     private readonly WaFormattingService: WhatsAppFormatter,
   ) {
     super()
@@ -38,6 +38,7 @@ export class ReplyProcessor extends WorkerHost {
             contact as any,
             combinedMessages,
             contact?.companies?.id as number,
+            false, // isUnauthorized
           )
 
         this.logger.log(`open AI Message ===> ${contact.phone} `, {

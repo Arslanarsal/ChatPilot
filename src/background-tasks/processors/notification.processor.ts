@@ -63,8 +63,8 @@ export class NotificationProcessor extends WorkerHost {
     const a =
       Math.sin(dLat / 2) ** 2 +
       Math.cos(this.toRad(lat1)) *
-        Math.cos(this.toRad(lat2)) *
-        Math.sin(dLon / 2) ** 2
+      Math.cos(this.toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }
@@ -161,7 +161,7 @@ export class NotificationProcessor extends WorkerHost {
   async sendWildFireNotification(radiusKm = 30): Promise<void> {
     const res: any = []
     const url =
-      'https://firms.modaps.eosdis.nasa.gov/api/area/csv/fffe703677b90808513954cfa93c6a16/VIIRS_SNPP_NRT/world/1'
+      'https://firms.mv/api/area/csv/G5RjxB0Z2rSTOB4ZPbH0OMEdw3XNQBbVAUAfj8rh/VIIRS_SNPP_NRT/world/1'
 
     try {
       this.logger.log('Fetching CSV data...')

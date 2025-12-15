@@ -42,7 +42,7 @@ export class N8NService {
       company_id: clinic.id,
       startTime: startDate,
       endTime: endDate,
-      service: [contact.recommended_treatments, contact.treatments_of_interest],
+      service: [], // Removed: recommended_treatments and treatments_of_interest columns no longer exist
       crm_provider: clinic.crm_provider,
     }
 
@@ -94,9 +94,7 @@ export class N8NService {
     const payload = {
       name: contact.name,
       phone: contact.phone,
-      pain_points: contact.pain_points,
-      recommended_treatments: contact.recommended_treatments,
-      treatments_of_interest: contact.treatments_of_interest,
+      // pain_points, recommended_treatments, treatments_of_interest columns no longer exist
       email,
       cpf,
       company_id: clinic.id,
@@ -115,8 +113,7 @@ export class N8NService {
       date,
       company_id: clinic.id,
       crm_provider: clinic.crm_provider,
-
-      service: [contact.recommended_treatments, contact.treatments_of_interest],
+      service: [], // Removed: recommended_treatments and treatments_of_interest columns no longer exist
     }
     return this.postRequest('save_appointment', payload)
   }

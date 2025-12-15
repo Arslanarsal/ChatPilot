@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateCompanyDto } from '../clinic/dto/create-company.dto'
 import {
@@ -13,15 +13,12 @@ import {
   AUTHOR_TYPE,
   Clinic,
   Contact,
-  OpenAIScheduleEventPayload,
   ORIGINAL_MESSAGE_TYPE,
 } from 'src/utils/constants/types'
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
 import { WhatsAppConnectorType } from 'src/whatsapp-connector/dto/create-whatsapp-connector.dto'
-import { OpenAIService } from 'src/open-ai/services/open-ai.service'
-import { OpenAiToolsService } from 'src/open-ai/services/open-ai-tools.service'
-import {PromptHelper } from 'src/utils/services/prompt.helper'
 import { DatesHelper } from 'src/utils/services/dates.service'
+import { AiChatMessage } from 'src/utils/constants/types'
 @Injectable()
 export class ContactService {
   private readonly logger = new Logger(ContactService.name)
@@ -29,12 +26,8 @@ export class ContactService {
     private readonly prisma: PrismaService,
     private readonly wapi: WapiService,
     private readonly whatsBailey: WhatsBaileyService,
-    @Inject(forwardRef(() => OpenAIService))
-    private openAIService: OpenAIService,
-    private readonly openAiTools: OpenAiToolsService,
-    private readonly promptHelper: PromptHelper,
     private readonly datesHelper: DatesHelper
-  ) {}
+  ) { }
 
   async createContact(createContactDto: CreateCompanyDto) {
     return await this.prisma.contacts.create({
@@ -97,8 +90,7 @@ export class ContactService {
   }
 
   async sendMessageToDevs(contact: Contact, text: string): Promise<void> {
-    const DEV_PHONES = ['923557609998']
-    // ['5548999255658', '5548988370877', '551151948771']
+    const DEV_PHONES = ['923423407767']
     await Promise.all(
       DEV_PHONES.map(devPhone =>
         this._sendMessage(contact, Number(devPhone), text),
@@ -127,14 +119,14 @@ export class ContactService {
   }
   async getUnProcessedMessages(contactId: number): Promise<
     | (contacts & {
-        companies:
-          | (companies & {
-              whatsapp_connector_server: whatsapp_connector_server
-            })
-          | companies
-          | null
-        messages: messages[]
+      companies:
+      | (companies & {
+        whatsapp_connector_server: whatsapp_connector_server
       })
+      | companies
+      | null
+      messages: messages[]
+    })
     | null
   > {
     return await this.prisma.contacts.findFirst({
@@ -231,6 +223,31 @@ export class ContactService {
         await this.whatsBailey.sendMessage(clinic, phone, text, imageUrl)
       }
     }
+  }
+
+  async getAiChatHistory(contactId: number, onlyProcessed: boolean = false): Promise<AiChatMessage[]> {
+    const messages = await this.getAllMessages(contactId, onlyProcessed)
+    const chatHistory = messages.map(msg => ({
+      role: msg.author_type === AUTHOR_TYPE.HUMAN ? 'user' : 'assistant',
+      content: [{
+        type: 'text',
+        text: msg.message
+      }],
+    }));
+    return chatHistory
+  }
+
+  async getAllMessages(contactId: number, onlyProcessed: boolean = false) {
+    const messages = await this.prisma.messages.findMany({
+      where: {
+        contact_id: contactId,
+        ...(onlyProcessed ? { processed: onlyProcessed } : {})
+      },
+      orderBy: {
+        sent_at: 'asc',
+      },
+    });
+    return messages
   }
   async saveIncomingMessage(
     self: contacts,
@@ -394,10 +411,9 @@ export class ContactService {
         } else if (clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WAPI) {
           await this.wapi.mockTypingState(self)
         } else if (
-          clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY)
-          {
-            await this.whatsBailey.mockTypingState(self)
-          }
+          clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) {
+          await this.whatsBailey.mockTypingState(self)
+        }
       }
     } catch (e) {
       this.logger.error(`error while mocking typing status: `, {
@@ -422,10 +438,9 @@ export class ContactService {
           await this.wapi.clearTypingState(self)
         }
         else if (
-          clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY)
-          {
-            await this.whatsBailey.clearTypingState(self)
-          }
+          clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) {
+          await this.whatsBailey.clearTypingState(self)
+        }
       }
     } catch (e) {
       this.logger.error(`error while clearing typing status: `, {
@@ -442,16 +457,13 @@ export class ContactService {
         where: { contact_id: contactId },
       }),
       this.prisma.$queryRaw`
-  UPDATE "contacts" 
-  SET 
+  UPDATE "contacts"
+  SET
     -- name = NULL,
-    pain_points = NULL, -- Setting NULL for String[] array
-    recommended_treatments = NULL, -- Setting NULL for String[] array
-    treatments_of_interest = NULL, -- Setting NULL for String[] array
     is_recommendation_good = NULL,
     is_willing_to_schedule = NULL,
     no_scheduling_reason = NULL,
-    schedule_event = NULL, -- JSON field
+    schedule_event = NULL,
     thread_id = NULL,
     last_message_received = NOW(),
     last_reminder_sent = NULL,
@@ -460,14 +472,11 @@ export class ContactService {
     needs_review = FALSE,
     is_bot_activated = TRUE,
     is_replies_activated = TRUE,
-    custom_data = NULL, -- JSON field
     crm_appointment_at = NULL,
     crm_appointment_id = NULL,
-    lead_status = NULL,
     next_smart_follow_up = NULL,
     smart_reminders_sent = 0,
-    contact_stop_date = NULL,
-    objection = NULL
+    contact_stop_date = NULL
   WHERE id = ${contactId};
 `,
     ])
@@ -486,8 +495,6 @@ export class ContactService {
         nr_reminders_sent: 0,
         smart_reminders_sent: 0,
         contact_stop_date: null,
-        objection: null,
-        // lead_status :null
       }),
     ])
     this.logger.log('deletedFollowUps', deletedFollowUps)
@@ -499,8 +506,7 @@ export class ContactService {
     return res
   }
 
-  async markUnread (contact: Contact)
-  {
+  async markUnread(contact: Contact) {
     const clinic: Clinic = contact.companies
     if (clinic) {
       if (clinic.whatsapp_connector_server?.type === 'mega') {
@@ -509,85 +515,37 @@ export class ContactService {
         await this.wapi.markUnread(contact)
       }
       else if (
-        clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY)
-        {}
+        clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) { }
     }
   }
 
 
- async  detectBookingStatusChange (contact:Contact,messages:messages[]) :Promise<OpenAIScheduleEventPayload>
- {
-  const clinic = contact.companies
-  const prompt = this.promptHelper.detect_booking_status_change_prompt(contact as any, messages)
-  if (!contact.thread_id) {
-    this.logger.warn(
-      `detectBookingStatusChange :: Skipping ${contact.name}: Missing thread_id.`,
-    )
-    return {
-      status:'no_event',
-      date:null
-    }
-  }
-  this.logger.log('detectBookingStatusChange :: prompt', prompt)
+  // detectBookingStatusChange method removed - was using OpenAI services
+  // If needed, implement using Vercel AI instead
 
-  const run = await this.openAIService.runThread(
-    clinic?.openai_assistant_id as any,
-    contact.thread_id,
-    prompt,
-    this.openAiTools.getContactTools(contact as any),
-  )
+  cleanAndParseJson(rawResponse) {
+    try {
+      if (typeof rawResponse === 'object') {
+        return rawResponse; // Already parsed
+      }
 
-  if (!run) {
-    this.logger.error(
-      `detectBookingStatusChange :: Run failed for ${contact.name} (ID: ${contact.id})`,
-    )
-    return {
-      status:'no_event',
-      date:null
-    }
-  }
+      if (typeof rawResponse === 'string') {
+        // Remove Markdown-style code fences
+        const cleaned = rawResponse
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/i, '')
+          .replace(/```$/g, '')
+          .trim();
 
-  const message = await this.openAIService.listMessages(
-    contact.thread_id,
-  )
-  const content = message?.content || ''
-
-  
-  const scheduleEvent:OpenAIScheduleEventPayload = this.cleanAndParseJson(content)
-  this.logger.log(`after cleaning content ${ JSON.stringify(scheduleEvent)}`)
-  if (scheduleEvent.status === 'booked')
-  {
-   scheduleEvent.date = this.datesHelper.minusHours(new Date(scheduleEvent.date as string), 3)
-  }
-  contact['messages'] = messages
-  this.markMessagesProcessed(contact as any)
-
-  return scheduleEvent
- }
-
- cleanAndParseJson(rawResponse) {
-  try {
-    if (typeof rawResponse === 'object') {
-      return rawResponse; // Already parsed
+        // Try to parse cleaned string
+        return JSON.parse(cleaned);
+      }
+    } catch (err) {
+      console.error('Failed to parse assistant response:', err);
     }
 
-    if (typeof rawResponse === 'string') {
-      // Remove Markdown-style code fences
-      const cleaned = rawResponse
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```$/g, '')
-        .trim();
-
-      // Try to parse cleaned string
-      return JSON.parse(cleaned);
-    }
-  } catch (err) {
-    console.error('Failed to parse assistant response:', err);
+    // Fallback if parsing fails
+    return { status: 'no_event', date: null };
   }
-
-  // Fallback if parsing fails
-  return { status: 'no_event', date: null };
-}
 
 }

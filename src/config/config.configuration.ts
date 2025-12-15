@@ -20,10 +20,9 @@ const appConfig = registerAs(ConfigKey.App, () => ({
   port: Number(process.env.PORT) || 3000,
   wapiUrl: process.env.WAPI_BASE_URL,
   openAiApiKey: process.env.OPENAI_API_KEY,
-  sentry: process.env.SENTRY_URL,
   redisUrl: process.env.REDIS_URL,
   n8nUrl: process.env.N8N_BASE_URL,
-  zonicApiKey: process.env.ZONIC_API_KEY,
+  chatPilotApiKey: process.env.chatPilot_API_KEY,
 }))
 
 const dbConfig = registerAs(ConfigKey.Db, () => ({
