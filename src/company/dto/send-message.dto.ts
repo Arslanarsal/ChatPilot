@@ -25,7 +25,7 @@ export class SendMessageDto {
   message: string;
 
   @IsString()
-  @ApiProperty({default:'n8n', description:'n8n_webhook_name or n8n_webhook_id from which you want to send message'})
+  @ApiProperty({default:'api', description:'Source of the message'})
   @IsNotEmpty()
   source: string;
 }

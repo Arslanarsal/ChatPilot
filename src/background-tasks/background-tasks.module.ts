@@ -11,8 +11,8 @@ import { ContactModule } from 'src/contact/contact.module'
 import { BullBoardModule } from '@bull-board/nestjs'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { CompanyModule } from 'src/company/company.module'
-import { WaConnService } from './services/whatsapp-connection-status.service'
-import { WaConnSProcessor } from './processors/whatsapp-connection-status.processor'
+import { FollowUpService } from './services/follow-up.service'
+import { FollowUpProcessor } from './processors/follow-up.processor'
 
 @Global()
 @Module({
@@ -24,10 +24,17 @@ import { WaConnSProcessor } from './processors/whatsapp-connection-status.proces
       {
         name: BackgroundQueue.REPLIES,
       },
+      {
+        name: BackgroundQueue.FOLLOW_UP,
+      },
     ),
     BullBoardModule.forFeature(
       {
         name: BackgroundQueue.REPLIES,
+        adapter: BullMQAdapter,
+      },
+      {
+        name: BackgroundQueue.FOLLOW_UP,
         adapter: BullMQAdapter,
       },
     ),
@@ -36,8 +43,8 @@ import { WaConnSProcessor } from './processors/whatsapp-connection-status.proces
   providers: [
     ReplyService,
     ReplyProcessor,
-    // WaConnService,
-    // WaConnSProcessor,
+    FollowUpService,
+    FollowUpProcessor,
   ],
   exports: [ReplyService],
 })

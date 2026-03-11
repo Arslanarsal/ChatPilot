@@ -37,55 +37,6 @@ export class AiToolsService {
         },
       }),
 
-      // SCHEDULING INTENT
-      save_is_willing_to_schedule: tool({
-        description: 'Updates whether the contact is willing to schedule an appointment.',
-        inputSchema: z.object({ isWillingToSchedule: z.boolean() }),
-        execute: async ({ isWillingToSchedule }) => {
-          try {
-            this.logger.log("tool call started", { context: "save_is_willing_to_schedule", parameters: { isWillingToSchedule, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
-            await this.contactService.updateField(contact, 'is_willing_to_schedule', isWillingToSchedule);
-            this.logger.log("tool call finished", { context: "save_is_willing_to_schedule", parameters: { isWillingToSchedule, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
-            return 'success';
-          } catch (error) {
-            this.logger.error("tool call failed", { context: "save_is_willing_to_schedule", parameters: { isWillingToSchedule, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed", error });
-            return 'failed'
-          }
-        },
-      }),
-
-      save_no_scheduling_reason: tool({
-        description: 'Saves the reason why a contact is not willing to schedule.',
-        inputSchema: z.object({ noSchedulingReason: z.string() }),
-        execute: async ({ noSchedulingReason }) => {
-          try {
-            this.logger.log("tool call started", { context: "save_no_scheduling_reason", parameters: { noSchedulingReason, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
-            await this.contactService.updateField(contact, 'no_scheduling_reason', noSchedulingReason);
-            this.logger.log("tool call finished", { context: "save_no_scheduling_reason", parameters: { noSchedulingReason, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
-            return 'success';
-          } catch (error) {
-            this.logger.error("tool call failed", { context: "save_no_scheduling_reason", parameters: { noSchedulingReason, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed", error });
-            return 'failed'
-          }
-        },
-      }),
-
-      save_is_recommendation_good: tool({
-        description: 'Saves whether the AI recommendation was considered good by the contact.',
-        inputSchema: z.object({ isRecommendationGood: z.boolean() }),
-        execute: async ({ isRecommendationGood }) => {
-          try {
-            this.logger.log("tool call started", { context: "save_is_recommendation_good", parameters: { isRecommendationGood, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
-            await this.contactService.updateField(contact, 'is_recommendation_good', isRecommendationGood);
-            this.logger.log("tool call finished", { context: "save_is_recommendation_good", parameters: { isRecommendationGood, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
-            return 'success';
-          } catch (error) {
-            this.logger.error("tool call failed", { context: "save_is_recommendation_good", parameters: { isRecommendationGood, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed", error });
-            return 'failed';
-          }
-        },
-      }),
-
       // BOT & HUMAN INTERACTION
       set_needs_review: tool({
         description: 'Flags a conversation for human review and can pause the bot.',
