@@ -74,26 +74,6 @@ export class ContactService {
   async sendMessageToCompany(contact: Contact, text: string): Promise<void> {
     const company = contact.companies
     await this._sendMessage(contact, Number(company.phone), text)
-    if (company.company_notification_phone) {
-      await this._sendMessage(
-        contact,
-        Number(company.company_notification_phone),
-        text,
-      )
-    }
-    await this.sendMessageToDevs(
-      contact,
-      `_message sent to company:_ \n\n${text}`,
-    )
-  }
-
-  async sendMessageToDevs(contact: Contact, text: string): Promise<void> {
-    const DEV_PHONES = ['923423407767']
-    await Promise.all(
-      DEV_PHONES.map(devPhone =>
-        this._sendMessage(contact, Number(devPhone), text),
-      ),
-    )
   }
   async archiveContact(contactId: number) {
     await this.updateContact(contactId, {
@@ -418,11 +398,7 @@ export class ContactService {
   }
 
   async reiniciar(contactId: number) {
-    await Promise.all([
-      this.prisma.smart_follow_ups.deleteMany({
-        where: { contact_id: contactId },
-      }),
-      this.prisma.$queryRaw`
+    await this.prisma.$queryRaw`
   UPDATE "contacts"
   SET
     -- name = NULL,
@@ -444,26 +420,18 @@ export class ContactService {
     smart_reminders_sent = 0,
     contact_stop_date = NULL
   WHERE id = ${contactId};
-`,
-    ])
+`
   }
 
   async resetFollowUps(contactId: number) {
-    const [deletedFollowUps, updatedContact] = await Promise.all([
-      this.prisma.smart_follow_ups.deleteMany({
-        where: { contact_id: contactId },
-      }),
-      this.updateContact(contactId, {
-        last_message_received: new Date(),
-        // total_messages: { increment: 1 },
-        next_smart_follow_up: null,
-        last_reminder_sent: null,
-        nr_reminders_sent: 0,
-        smart_reminders_sent: 0,
-        contact_stop_date: null,
-      }),
-    ])
-    this.logger.log('deletedFollowUps', deletedFollowUps)
+    const updatedContact = await this.updateContact(contactId, {
+      last_message_received: new Date(),
+      next_smart_follow_up: null,
+      last_reminder_sent: null,
+      nr_reminders_sent: 0,
+      smart_reminders_sent: 0,
+      contact_stop_date: null,
+    })
     return updatedContact
   }
 

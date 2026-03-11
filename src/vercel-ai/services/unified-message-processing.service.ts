@@ -36,11 +36,6 @@ export class UnifiedMessageProcessingService {
     const updatedContact = await this.contactService.updateContact(contact.id, {
       last_message_received: new Date(),
       total_messages: { increment: 1 } as any,
-      next_smart_follow_up: null,
-      last_reminder_sent: null,
-      nr_reminders_sent: 0,
-      smart_reminders_sent: 0,
-      contact_stop_date: null
     })
     this.logger.log(`updatedContact: ${updatedContact}`)
     if (updatedContact.total_messages >= MAX_MESSAGES) {

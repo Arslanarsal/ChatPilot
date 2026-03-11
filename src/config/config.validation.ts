@@ -29,21 +29,12 @@ class EnvironmentVariables {
   @IsDefined()
   @IsString()
   @MinLength(1)
-  WAPI_BASE_URL: string
-
-  @IsDefined()
-  @IsString()
-  @MinLength(1)
   OPENAI_API_KEY: string
 
   @IsDefined()
   @IsString()
   @MinLength(1)
   REDIS_URL: string
-
-  @IsUrl()
-  @IsDefined()
-  N8N_BASE_URL: string
 
   @IsString()
   @IsNotEmpty()

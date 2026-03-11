@@ -18,10 +18,8 @@ const appConfig = registerAs(ConfigKey.App, () => ({
     Environment[process.env.NODE_ENV as keyof typeof Environment] ||
     Environment.Development,
   port: Number(process.env.PORT) || 3000,
-  wapiUrl: process.env.WAPI_BASE_URL,
   openAiApiKey: process.env.OPENAI_API_KEY,
   redisUrl: process.env.REDIS_URL,
-  n8nUrl: process.env.N8N_BASE_URL,
   chatPilotApiKey: process.env.chatPilot_API_KEY,
 }))
 

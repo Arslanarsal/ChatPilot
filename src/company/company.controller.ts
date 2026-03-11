@@ -18,12 +18,10 @@ import { ContactService } from 'src/contact/contact.service'
 import {
   AUTHOR_TYPE,
   Contact,
-  ORIGINAL_MESSAGE_TYPE,
 } from 'src/utils/constants/types'
 import { SendMessageDto } from './dto/send-message.dto'
 import { WhatsAppFormatter } from 'src/utils/services/whatsapp-formatter.helper'
 import { ConfigsService } from 'src/config/config.service'
-import { IsOnWhatsappDto } from './dto/is-on-whatsapp.dto'
 
 @ApiTags('Companies')
 @Controller('companies')

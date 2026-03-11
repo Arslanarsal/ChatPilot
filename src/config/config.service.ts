@@ -27,13 +27,6 @@ export class ConfigsService {
     }
     return key
   }
-  get wapiBaseUrl(): string {
-    const wapiUrl = this.configService.get<string>('App.wapiUrl')
-    if (wapiUrl === undefined) {
-      throw new Error('App.wapiUrl is not defined')
-    }
-    return wapiUrl
-  }
   getRedisUrl(): string {
     const redisUrl = this.configService.get<string>('App.redisUrl')
     if (redisUrl === undefined) {
@@ -69,12 +62,5 @@ export class ConfigsService {
       throw new Error('Db.url is not defined')
     }
     return dbUrl
-  }
-  get n8n_url(): string {
-    const n8nUrl = this.configService.get<string>('App.n8nUrl')
-    if (n8nUrl === undefined) {
-      throw new Error('Db.url is not defined')
-    }
-    return n8nUrl
   }
 }
