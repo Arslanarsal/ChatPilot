@@ -133,10 +133,14 @@ export class CalComService {
     }
 
     try {
-      const response = await axios.post(url, {
-        "cancellationReason": "User requested cancellation",
-        "cancelSubsequentBookings": false
-      }, { headers })
+      const response = await axios.post(
+        url,
+        {
+          cancellationReason: 'User requested cancellation',
+          cancelSubsequentBookings: false,
+        },
+        { headers },
+      )
       return response.status === 200
         ? {
             success: true,
@@ -153,7 +157,9 @@ export class CalComService {
     } catch (error: any) {
       return {
         success: false,
-        error: error?.message || 'cancel appointment failed to unknown reason try again',
+        error:
+          error?.message ||
+          'cancel appointment failed to unknown reason try again',
         provider: 'cal.com',
         data: null,
       }

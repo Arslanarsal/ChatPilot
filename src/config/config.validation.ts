@@ -4,9 +4,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumberString,
-  IsOptional,
   IsString,
-  IsUrl,
   MinLength,
   validateSync,
 } from 'class-validator'

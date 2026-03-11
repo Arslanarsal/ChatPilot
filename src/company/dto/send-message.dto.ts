@@ -22,10 +22,10 @@ export class SendMessageDto {
   })
   @IsString()
   @IsNotEmpty()
-  message: string;
+  message: string
 
   @IsString()
-  @ApiProperty({default:'api', description:'Source of the message'})
+  @ApiProperty({ default: 'api', description: 'Source of the message' })
   @IsNotEmpty()
-  source: string;
+  source: string
 }

@@ -15,7 +15,7 @@ export class WhatsAppFormatter {
     return null
   }
   cleanMessage(text: string): string {
-    let output = text.replace(/\【.*?\】/g, '')
+    let output = text.replace(/【.*?】/g, '')
     output = output.replace(/\*\*/g, '*').trim()
     return output
   }
@@ -35,7 +35,7 @@ export class WhatsAppFormatter {
     text = this.cleanMessage(text)
 
     let blocks = text.trim().split('\n\n')
-    let blocks2 = blocks.map(block => this.splitByImages(block)) // Split each block by "\n!"
+    const blocks2 = blocks.map(block => this.splitByImages(block)) // Split each block by "\n!"
     blocks = blocks2.flat() // Flatten the list
 
     blocks = blocks.map(block => block.trim()).filter(block => block) // Remove empty blocks

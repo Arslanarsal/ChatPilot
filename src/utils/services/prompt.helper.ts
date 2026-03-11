@@ -7,16 +7,21 @@ export class PromptHelper {
 
   constructor() {}
 
-  detect_booking_status_change_prompt (contact: Contact, messages: messages[]): string
-  {
-
+  detect_booking_status_change_prompt(
+    contact: Contact,
+    messages: messages[],
+  ): string {
     const authorTypes = {
-        human : 'client',
-        bot : 'company-bot',
-        user_whatsapp : 'company-human'
+      human: 'client',
+      bot: 'company-bot',
+      user_whatsapp: 'company-human',
     }
-    
-    const history = messages.map(item=> {return `<${authorTypes[item.author_type]}>${item.message}</${authorTypes[item.author_type]}>`}).join('\n')
+
+    const history = messages
+      .map(item => {
+        return `<${authorTypes[item.author_type]}>${item.message}</${authorTypes[item.author_type]}>`
+      })
+      .join('\n')
     const prompt = `You are a helpful analyzer of chat messages. Your job is to determine if a meeting has been "booked", "cancelled", or if there is "no_event", by reviewing the chat history.
 
 Instructions:
@@ -52,11 +57,8 @@ Respond using ONLY one of these valid formats:
     
     <chat-history>
     ${history}
-    </chat-history>`;
-    
+    </chat-history>`
 
     return prompt
-
   }
 }
-

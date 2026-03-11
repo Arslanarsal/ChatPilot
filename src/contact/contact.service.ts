@@ -5,18 +5,18 @@ import {
   companies,
   contacts,
   messages,
+  Prisma,
   whatsapp_connector_server,
 } from '@prisma/client'
-import { Prisma } from '@prisma/client'
 import {
   AUTHOR_TYPE,
+  AiChatMessage,
   Company,
   Contact,
   ORIGINAL_MESSAGE_TYPE,
 } from 'src/utils/constants/types'
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
 import { WhatsAppConnectorType } from 'src/whatsapp-connector/dto/create-whatsapp-connector.dto'
-import { AiChatMessage } from 'src/utils/constants/types'
 
 @Injectable()
 export class ContactService {
@@ -24,7 +24,7 @@ export class ContactService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly whatsBailey: WhatsBaileyService,
-  ) { }
+  ) {}
 
   async createContact(createContactDto: CreateCompanyDto) {
     return await this.prisma.contacts.create({
@@ -99,14 +99,14 @@ export class ContactService {
 
   async getUnProcessedMessages(contactId: number): Promise<
     | (contacts & {
-      companies:
-      | (companies & {
-        whatsapp_connector_server: whatsapp_connector_server
+        companies:
+          | (companies & {
+              whatsapp_connector_server: whatsapp_connector_server
+            })
+          | companies
+          | null
+        messages: messages[]
       })
-      | companies
-      | null
-      messages: messages[]
-    })
     | null
   > {
     return await this.prisma.contacts.findFirst({
@@ -193,15 +193,20 @@ export class ContactService {
     }
   }
 
-  async getAiChatHistory(contactId: number, onlyProcessed: boolean = false): Promise<AiChatMessage[]> {
+  async getAiChatHistory(
+    contactId: number,
+    onlyProcessed: boolean = false,
+  ): Promise<AiChatMessage[]> {
     const messages = await this.getAllMessages(contactId, onlyProcessed)
     const chatHistory = messages.map(msg => ({
       role: msg.author_type === AUTHOR_TYPE.HUMAN ? 'user' : 'assistant',
-      content: [{
-        type: 'text',
-        text: msg.message
-      }],
-    }));
+      content: [
+        {
+          type: 'text',
+          text: msg.message,
+        },
+      ],
+    }))
     return chatHistory
   }
 
@@ -209,12 +214,12 @@ export class ContactService {
     const messages = await this.prisma.messages.findMany({
       where: {
         contact_id: contactId,
-        ...(onlyProcessed ? { processed: onlyProcessed } : {})
+        ...(onlyProcessed ? { processed: onlyProcessed } : {}),
       },
       orderBy: {
         sent_at: 'asc',
       },
-    });
+    })
     return messages
   }
 
@@ -286,9 +291,7 @@ export class ContactService {
     field: keyof Prisma.contactsUpdateInput,
     value: string | number | boolean,
   ): Promise<string> {
-    const allowedFields = [
-      'name',
-    ]
+    const allowedFields = ['name']
 
     if (!allowedFields.includes(field as string)) {
       return `Invalid field: ${field}`
@@ -313,7 +316,9 @@ export class ContactService {
 
       if (company) {
         if (
-          company.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) {
+          company.whatsapp_connector_server?.type ===
+          WhatsAppConnectorType.WHATS_BAILEY
+        ) {
           await this.whatsBailey.mockTypingState(self)
         }
       }
@@ -331,7 +336,9 @@ export class ContactService {
     try {
       if (company) {
         if (
-          company.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) {
+          company.whatsapp_connector_server?.type ===
+          WhatsAppConnectorType.WHATS_BAILEY
+        ) {
           await this.whatsBailey.clearTypingState(self)
         }
       }

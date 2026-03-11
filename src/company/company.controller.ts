@@ -15,10 +15,7 @@ import { CreateCompanyDto } from './dto/create-company.dto'
 import { ApiBody, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { Response } from 'express'
 import { ContactService } from 'src/contact/contact.service'
-import {
-  AUTHOR_TYPE,
-  Contact,
-} from 'src/utils/constants/types'
+import { AUTHOR_TYPE, Contact } from 'src/utils/constants/types'
 import { SendMessageDto } from './dto/send-message.dto'
 import { WhatsAppFormatter } from 'src/utils/services/whatsapp-formatter.helper'
 import { ConfigsService } from 'src/config/config.service'
@@ -31,7 +28,7 @@ export class CompanyController {
     private readonly contactService: ContactService,
     private readonly WaFormattingService: WhatsAppFormatter,
     private readonly ConfigService: ConfigsService,
-  ) { }
+  ) {}
 
   @ApiOperation({ summary: 'Create Company' })
   @ApiBody({
@@ -62,8 +59,9 @@ export class CompanyController {
     @Param('contactId', ParseIntPipe) contactId: number,
     @Query() data: SendMessageDto,
   ) {
-    if (this.ConfigService.chatPilotApiKey !== apiKey)
+    if (this.ConfigService.chatPilotApiKey !== apiKey) {
       throw new UnprocessableEntityException('invalid api key')
+    }
     const contact = await this.contactService.getContactById(contactId)
     if (!contact) throw new UnprocessableEntityException('contact not found')
     const company = await this.companyService.findById(companyId)
@@ -81,14 +79,20 @@ export class CompanyController {
           image.alt_text,
           image.url,
           AUTHOR_TYPE.BOT,
-          data.source
+          data.source,
         )
         messages.push({
           message: image.alt_text,
           image: image.url,
         })
       } else {
-        await this.contactService.sendMessage(contact as Contact, part, '', AUTHOR_TYPE.BOT, data.source)
+        await this.contactService.sendMessage(
+          contact as Contact,
+          part,
+          '',
+          AUTHOR_TYPE.BOT,
+          data.source,
+        )
         messages.push({
           message: part,
         })
@@ -104,11 +108,15 @@ export class CompanyController {
     @Param('number', ParseIntPipe) number: number,
     @Query() data: SendMessageDto,
   ) {
-    if (this.ConfigService.chatPilotApiKey !== apiKey)
+    if (this.ConfigService.chatPilotApiKey !== apiKey) {
       throw new UnprocessableEntityException('invalid api key')
+    }
     const company = await this.companyService.findById(companyId)
     if (!company) throw new UnprocessableEntityException('company not found')
-    const contact = await this.contactService.getOrCreateContact(company, number)
+    const contact = await this.contactService.getOrCreateContact(
+      company,
+      number,
+    )
     if (!contact) throw new UnprocessableEntityException('contact not found')
 
     const contentParts = this.WaFormattingService.splitMessage(data.message)
@@ -124,14 +132,20 @@ export class CompanyController {
           image.alt_text,
           image.url,
           AUTHOR_TYPE.BOT,
-          data.source
+          data.source,
         )
         messages.push({
           message: image.alt_text,
           image: image.url,
         })
       } else {
-        await this.contactService.sendMessage(contact as Contact, part, '', AUTHOR_TYPE.BOT, data.source)
+        await this.contactService.sendMessage(
+          contact as Contact,
+          part,
+          '',
+          AUTHOR_TYPE.BOT,
+          data.source,
+        )
         messages.push({
           message: part,
         })
@@ -139,7 +153,6 @@ export class CompanyController {
     }
     return messages
   }
-
 
   @ApiOperation({ summary: 'Create Session for Company' })
   @Post(':id/create_session')

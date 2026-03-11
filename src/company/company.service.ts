@@ -67,12 +67,15 @@ export class CompanyService {
     if (!company) throw new UnprocessableEntityException('company not found')
 
     if (
-      company.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY &&
+      company.whatsapp_connector_server?.type ===
+        WhatsAppConnectorType.WHATS_BAILEY &&
       company.session_id !== null
     ) {
-      const sessionStatus = await this.whatsBaileyService.getSessionStatus(company)
-      if (sessionStatus.success)
+      const sessionStatus =
+        await this.whatsBaileyService.getSessionStatus(company)
+      if (sessionStatus.success) {
         throw new UnprocessableEntityException(sessionStatus.message)
+      }
     }
 
     const server = await this.getAvailableServer()
@@ -80,8 +83,9 @@ export class CompanyService {
 
     const session = await this.whatsBaileyService.startSession(company, server)
     this.logger.log(`${session.success}`, 'company service')
-    if (!session.success)
+    if (!session.success) {
       throw new UnprocessableEntityException(session.message)
+    }
 
     await this.updateCompany(company.id, {
       whatsapp_connector_server_id: server.id,
@@ -110,24 +114,28 @@ export class CompanyService {
     const company = await this.findById(companyId)
     if (!company) throw new UnprocessableEntityException('company not found')
     if (
-      company.whatsapp_connector_server?.type !== WhatsAppConnectorType.WHATS_BAILEY ||
-      company.whatsapp_connector_server?.url == null
-    )
+      company.whatsapp_connector_server?.type !==
+        WhatsAppConnectorType.WHATS_BAILEY ||
+      company.whatsapp_connector_server?.url === null
+    ) {
       throw new UnprocessableEntityException(
         `provider isn't WhatsApp Bailey or server url missing`,
       )
+    }
     return await this.whatsBaileyService.getSessionQrCode(res, company)
   }
   async getSessionStatus(companyId: number) {
     const company = await this.findById(companyId)
     if (!company) throw new UnprocessableEntityException('company not found')
     if (
-      company.whatsapp_connector_server?.type !== WhatsAppConnectorType.WHATS_BAILEY ||
-      company.whatsapp_connector_server?.url == null
-    )
+      company.whatsapp_connector_server?.type !==
+        WhatsAppConnectorType.WHATS_BAILEY ||
+      company.whatsapp_connector_server?.url === null
+    ) {
       throw new UnprocessableEntityException(
         `provider isn't WhatsApp Bailey or server url missing`,
       )
+    }
     return await this.whatsBaileyService.getSessionStatus(company)
   }
 
@@ -147,7 +155,9 @@ export class CompanyService {
     })
 
     for (const company of companies) {
-      const sessionResult = await this.whatsBaileyService.getSessionStatus(company as Company)
+      const sessionResult = await this.whatsBaileyService.getSessionStatus(
+        company as Company,
+      )
       const status = sessionResult.state === 'CONNECTED'
 
       company.whatsapp_connection_status = (

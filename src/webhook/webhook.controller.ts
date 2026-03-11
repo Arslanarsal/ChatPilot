@@ -8,10 +8,12 @@ export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
 
   @ApiOperation({ summary: 'Webhook whats-bailey' })
-  @ApiBody({ type: WhatsBaileyDto, description: 'The webhook data in JSON format' })
+  @ApiBody({
+    type: WhatsBaileyDto,
+    description: 'The webhook data in JSON format',
+  })
   @Post('whats-bailey')
   whatsBaileyWebhook(@Body() createWebhookDto: WhatsBaileyDto) {
     return this.webhookService.whatsBaileyWebhook(createWebhookDto)
   }
-
 }

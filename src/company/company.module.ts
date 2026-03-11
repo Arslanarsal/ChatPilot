@@ -9,7 +9,7 @@ import { UtilsModule } from 'src/utils/utils.module'
   imports: [
     PrismaModule,
     forwardRef(() => UtilsModule),
-    forwardRef(() => ContactModule)
+    forwardRef(() => ContactModule),
   ],
   controllers: [CompanyController],
   providers: [CompanyService],

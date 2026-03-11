@@ -17,14 +17,14 @@ import { PromptHelper } from './services/prompt.helper'
     AppointmentService,
     WhatsAppFormatter,
     WhatsBaileyService,
-    PromptHelper
+    PromptHelper,
   ],
   exports: [
     DatesHelper,
     AppointmentService,
     WhatsAppFormatter,
     WhatsBaileyService,
-    PromptHelper
+    PromptHelper,
   ],
 })
 export class UtilsModule {}

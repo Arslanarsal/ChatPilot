@@ -4,9 +4,7 @@ import { ApiBody } from '@nestjs/swagger'
 
 @Controller('background-tasks')
 export class BackgroundTasksController {
-  constructor(
-    private readonly replyService: ReplyService,
-  ) { }
+  constructor(private readonly replyService: ReplyService) {}
 
   @Post('reply')
   @ApiBody({

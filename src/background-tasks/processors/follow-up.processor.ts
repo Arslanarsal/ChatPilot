@@ -77,16 +77,24 @@ export class FollowUpProcessor extends WorkerHost {
         await this.sendFollowUp(contact as unknown as Contact)
         sent++
       } catch (error) {
-        this.logger.error(`Failed to send follow-up to contact ${contact.id}`, error)
+        this.logger.error(
+          `Failed to send follow-up to contact ${contact.id}`,
+          error,
+        )
       }
     }
 
-    this.logger.log(`Follow-up check complete. Sent: ${sent}/${needsFollowUp.length}`)
+    this.logger.log(
+      `Follow-up check complete. Sent: ${sent}/${needsFollowUp.length}`,
+    )
     return { checked: needsFollowUp.length, sent }
   }
 
   private async sendFollowUp(contact: Contact): Promise<void> {
-    const chatHistory = await this.contactService.getAiChatHistory(contact.id, true)
+    const chatHistory = await this.contactService.getAiChatHistory(
+      contact.id,
+      true,
+    )
 
     if (chatHistory.length === 0) return
 
@@ -105,8 +113,12 @@ export class FollowUpProcessor extends WorkerHost {
     )
 
     if (!text || text.trim() === 'NO_FOLLOW_UP') {
-      this.logger.log(`No follow-up needed for contact ${contact.id} (conversation ended naturally)`)
-      await this.contactService.updateContact(contact.id, { is_follow_up_sent: true })
+      this.logger.log(
+        `No follow-up needed for contact ${contact.id} (conversation ended naturally)`,
+      )
+      await this.contactService.updateContact(contact.id, {
+        is_follow_up_sent: true,
+      })
       return
     }
 
@@ -115,7 +127,9 @@ export class FollowUpProcessor extends WorkerHost {
       await this.contactService.sendMessage(contact, part)
     }
 
-    await this.contactService.updateContact(contact.id, { is_follow_up_sent: true })
+    await this.contactService.updateContact(contact.id, {
+      is_follow_up_sent: true,
+    })
     this.logger.log(`Follow-up sent to contact ${contact.id}`)
   }
 }

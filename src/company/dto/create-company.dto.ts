@@ -1,8 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import {
-  IsString,
-  IsInt,
-} from 'class-validator'
+import { IsString, IsInt } from 'class-validator'
 
 export class CreateCompanyDto {
   @ApiProperty({ example: 'GeeksHub' })

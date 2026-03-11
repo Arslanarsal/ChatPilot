@@ -99,7 +99,7 @@ export class AppointmentService {
 
   async cancelAppointment(
     company: companies,
-    contact:Contact
+    contact: Contact,
   ): Promise<{
     success: boolean
     error: string | null
@@ -110,10 +110,7 @@ export class AppointmentService {
     try {
       let response
       if (company.crm_provider === 'cal.com') {
-        response = await this.CalComService.cancelAppointment(
-          company,
-          contact
-        )
+        response = await this.CalComService.cancelAppointment(company, contact)
       } else {
         response = {
           success: false,

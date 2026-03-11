@@ -14,7 +14,9 @@ export class WaConnSProcessor extends WorkerHost {
   }
 
   async process(job: Job): Promise<any> {
-    this.logger.log(`Processing job ${job.id}: syncing WhatsApp connection status for all companies`)
+    this.logger.log(
+      `Processing job ${job.id}: syncing WhatsApp connection status for all companies`,
+    )
     return await this.companyService.syncAllSessionStatus()
   }
 }

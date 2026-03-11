@@ -28,9 +28,8 @@ export class ReplyProcessor extends WorkerHost {
     this.contactService.mockTypingState(contact as Contact)
     if (contact) {
       if (contact.messages.length > 0) {
-    
-        const company = contact.companies as Company;
-        const combinedMessages = this.formatMessage(contact.messages);
+        const company = contact.companies as Company
+        const combinedMessages = this.formatMessage(contact.messages)
         this.logger.log(`combinedMessages: ${combinedMessages}`)
 
         const openAIMessage =
@@ -89,26 +88,35 @@ export class ReplyProcessor extends WorkerHost {
     }
   }
 
-  formatMessage(messages:messages[]):string {
-    const isIncludeCompanyReply = messages.some(msg => msg.author_type === AUTHOR_TYPE.USER_WHATSAPP);
-    const resetTriggers = ['reiniciar', '/reset'];
+  formatMessage(messages: messages[]): string {
+    const isIncludeCompanyReply = messages.some(
+      msg => msg.author_type === AUTHOR_TYPE.USER_WHATSAPP,
+    )
+    const resetTriggers = ['reiniciar', '/reset']
 
     const matchedReset = messages.find(msg =>
-      resetTriggers.includes(msg.message.toLowerCase())
-    );
-    
-    const isResetChat = Boolean(matchedReset);
-    const matchedText = matchedReset?.message || '';
-    
-    if(isResetChat)
-    {
-      return matchedText 
+      resetTriggers.includes(msg.message.toLowerCase()),
+    )
+
+    const isResetChat = Boolean(matchedReset)
+    const matchedText = matchedReset?.message || ''
+
+    if (isResetChat) {
+      return matchedText
     }
-    if(isIncludeCompanyReply)
-    {
-      const lastWAUserMsgIndex = messages.length - 1 - messages.slice().reverse().findIndex(msg => msg.author_type === AUTHOR_TYPE.USER_WHATSAPP);
-      const doNotReplyMsg =messages.slice(0,lastWAUserMsgIndex +1) 
-      const needToReplyMsg =messages.slice(lastWAUserMsgIndex +1,messages.length )
+    if (isIncludeCompanyReply) {
+      const lastWAUserMsgIndex =
+        messages.length -
+        1 -
+        messages
+          .slice()
+          .reverse()
+          .findIndex(msg => msg.author_type === AUTHOR_TYPE.USER_WHATSAPP)
+      const doNotReplyMsg = messages.slice(0, lastWAUserMsgIndex + 1)
+      const needToReplyMsg = messages.slice(
+        lastWAUserMsgIndex + 1,
+        messages.length,
+      )
       return `  
       Instructions
       Ignore messages in <do-not-reply> tags — use for context only. however you can tool call on these.
@@ -117,23 +125,22 @@ export class ReplyProcessor extends WorkerHost {
 
       Respond only to messages in <probably-need-to-reply> tags.
                  <probably-need-to-reply> ${this.toXmlFormat(needToReplyMsg)} </probably-need-to-reply>`
-    }
-
-    else {
-     return `<need-to-reply> ${this.toXmlFormat(messages)} </need-to-reply>`
+    } else {
+      return `<need-to-reply> ${this.toXmlFormat(messages)} </need-to-reply>`
     }
   }
 
   toXmlFormat(messages: messages[]): string {
     return messages.reduce((xml, msg) => {
       if (msg.author_type === AUTHOR_TYPE.USER_WHATSAPP) {
-        return xml + `<company-manual-reply>${msg.message}</company-manual-reply>`;
+        return (
+          xml + `<company-manual-reply>${msg.message}</company-manual-reply>`
+        )
       } else if (msg.author_type === AUTHOR_TYPE.HUMAN) {
-        return xml + `<user-message>${msg.message}</user-message>`;
+        return xml + `<user-message>${msg.message}</user-message>`
       } else {
-        return xml + `<bot-message>${msg.message}</bot-message>`;
+        return xml + `<bot-message>${msg.message}</bot-message>`
       }
-    }, '');
+    }, '')
   }
-  
 }

@@ -9,17 +9,17 @@ export class ReplyService {
   constructor(
     @InjectQueue(BackgroundQueue.REPLIES) private replyQueue: Queue,
   ) {}
-  async addReplyTask(taskData: { 
-    clientId: number,
-    message?: string,
-    contactPhone?: BigInt,
-    companyId?: number,
-    companyPhone?: BigInt,
-    fromMe?: boolean,
-    originalMessageType?: string,
+  async addReplyTask(taskData: {
+    clientId: number
+    message?: string
+    contactPhone?: bigint
+    companyId?: number
+    companyPhone?: bigint
+    fromMe?: boolean
+    originalMessageType?: string
     senderName?: string
   }) {
-    const task =  await this.replyQueue.add(BackgroundQueue.REPLIES, taskData, {
+    const task = await this.replyQueue.add(BackgroundQueue.REPLIES, taskData, {
       // attempts: 0, // Retry the task up to 3 times
       // backoff: 20000, // 20 seconds between retries,
       delay: 16000, // 16 seconds delay

@@ -46,8 +46,9 @@ export class WhatsappConnectorService {
           url: updateServerDto.url,
         },
       })
-    if (duplicate)
+    if (duplicate) {
       throw new ConflictException('connector with this domain already exist')
+    }
     const updatedConnector =
       await this.prismaService.whatsapp_connector_server.update({
         where: {

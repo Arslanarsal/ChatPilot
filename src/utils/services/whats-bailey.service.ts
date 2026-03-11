@@ -13,12 +13,10 @@ import { Company, Contact } from '../constants/types'
 import * as QRCode from 'qrcode'
 import { CompanyService } from 'src/company/company.service'
 
-
 @Injectable()
 export class WhatsBaileyService {
   private readonly logger = new Logger(WhatsBaileyService.name)
   constructor(
-
     private readonly config: ConfigsService,
     @Inject(forwardRef(() => CompanyService))
     private readonly companyService: CompanyService,
@@ -42,17 +40,17 @@ export class WhatsBaileyService {
     }
 
     const requestData: any = imageUrl
-    ? {
-      number: `${phone}`,
-      text: message,
-      url: imageUrl,
-      type: 'media'
-      }
-    : {
-      number: `${phone}`,
-      text: message,
-      type : 'text'
-      }
+      ? {
+          number: `${phone}`,
+          text: message,
+          url: imageUrl,
+          type: 'media',
+        }
+      : {
+          number: `${phone}`,
+          text: message,
+          type: 'text',
+        }
 
     this.logger.log('URL:', url)
     this.logger.log('Sending Bailey message:', requestData)
@@ -98,7 +96,7 @@ export class WhatsBaileyService {
           phone: company.phone,
           session_id: company.session_id,
           server_url: company.whatsapp_connector_server?.url,
-          type : company.whatsapp_connector_server?.type,
+          type: company.whatsapp_connector_server?.type,
           error: 'company session_id is not defined',
         })
         return { success: false, message: 'company session_id is not defined' }
@@ -123,7 +121,9 @@ export class WhatsBaileyService {
       return {
         success: response.data.status.status,
         state: response.data.status.status,
-        message: response.data.status?.message ?response.data.status?.message :`Session ${response.data.status.status}`,
+        message: response.data.status?.message
+          ? response.data.status?.message
+          : `Session ${response.data.status.status}`,
       }
     } catch (e) {
       this.logger.error('error while fetching WhatsBailey session status', {
@@ -133,7 +133,10 @@ export class WhatsBaileyService {
         server_url: company.whatsapp_connector_server?.url,
         error: e?.message || 'Unknown error',
       })
-      return { success: false, message: 'error during WhatsBailey status api call' }
+      return {
+        success: false,
+        message: 'error during WhatsBailey status api call',
+      }
     }
   }
 
@@ -159,11 +162,11 @@ export class WhatsBaileyService {
         error: null,
       })
     }
-    if(!response.data.qr){
+    if (!response.data.qr) {
       return res.send({
         statusCode: 201,
         data: response.data,
-        message : response.data.message,
+        message: response.data.message,
         error: null,
       })
     }
@@ -191,8 +194,7 @@ export class WhatsBaileyService {
   }> {
     const url = `${sever?.url}/api/v1/whatsapp/connect`
 
-
-    const response = await axios.post(url,{id:`${company.id}`})
+    const response = await axios.post(url, { id: `${company.id}` })
 
     if (response.status !== 201) {
       const errorMessage = `Error starting session: ${response.status} ${response.data}`
@@ -204,7 +206,6 @@ export class WhatsBaileyService {
     return response.data
   }
 
- 
   async mockTypingState(contact: Contact): Promise<{
     success: boolean
     result?: string

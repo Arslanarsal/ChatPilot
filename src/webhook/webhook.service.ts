@@ -16,7 +16,6 @@ export class WebhookService {
     private readonly companyService: CompanyService,
   ) {}
 
-
   private async processWebhook({
     message,
     userPhone,
@@ -24,18 +23,20 @@ export class WebhookService {
     photoUrl,
     fromMe,
     originalMessageType,
-    senderName
+    senderName,
   }: {
     message: string
-    userPhone: BigInt
-    companyPhone: BigInt
+    userPhone: bigint
+    companyPhone: bigint
     photoUrl: string | null
     fromMe: boolean
     originalMessageType: ORIGINAL_MESSAGE_TYPE
-    senderName?: string,
+    senderName?: string
   }) {
     try {
-      const company = await this.companyService.findByPhone(Number(companyPhone))
+      const company = await this.companyService.findByPhone(
+        Number(companyPhone),
+      )
 
       if (!company) {
         this.logger.log('Company not found', {
@@ -75,7 +76,7 @@ export class WebhookService {
             originalMessageType,
           ),
           this.contactService.updateContact(contact.id, {
-            is_replies_activated : false
+            is_replies_activated: false,
           }),
         ])
       } else {
@@ -85,27 +86,33 @@ export class WebhookService {
           })
         }
         // incoming Message
-        
-        await Promise.all([ this.contactService.resetFollowUps(contact.id),
-         this.contactService.saveIncomingMessage(
-          contact,
-          message,
-          originalMessageType,
-        )])
+
+        await Promise.all([
+          this.contactService.resetFollowUps(contact.id),
+          this.contactService.saveIncomingMessage(
+            contact,
+            message,
+            originalMessageType,
+          ),
+        ])
         const shouldProcessMessage =
-          (message.toLowerCase() === '/reset') ||
-          (company.is_bot_activated && contact.is_bot_activated && contact.is_replies_activated) 
+          message.toLowerCase() === '/reset' ||
+          (company.is_bot_activated &&
+            contact.is_bot_activated &&
+            contact.is_replies_activated)
 
         if (shouldProcessMessage) {
-          await this.replyService.addReplyTask({ clientId: contact.id ,message,
+          await this.replyService.addReplyTask({
+            clientId: contact.id,
+            message,
             contactPhone: userPhone,
             companyId: company.id,
             companyPhone,
             fromMe,
             originalMessageType,
-            senderName
+            senderName,
           })
-        }else {
+        } else {
           await this.contactService.markUnread(contact)
         }
       }
@@ -115,7 +122,7 @@ export class WebhookService {
     }
   }
 
- async transcribeMessage(buffer) {
+  async transcribeMessage(buffer) {
     try {
       const openai = new OpenAI()
       const transcription = await openai.audio.transcriptions.create({
@@ -131,48 +138,46 @@ export class WebhookService {
     }
   }
 
-
   async whatsBaileyWebhook(baileyDto: WhatsBaileyDto): Promise<string> {
     this.logger.verbose('Bailey webhook received', { baileyDto })
     this.logger.log('baileyDto', baileyDto)
-    baileyDto['originalMessageType']= baileyDto.isAudio ? ORIGINAL_MESSAGE_TYPE.AUDIO : ORIGINAL_MESSAGE_TYPE.TEXT
-    if(baileyDto.isAudio){
-      
-      baileyDto.text = await this.transcribeMessage(Buffer.from(baileyDto.mediaBuffer))
+    baileyDto['originalMessageType'] = baileyDto.isAudio
+      ? ORIGINAL_MESSAGE_TYPE.AUDIO
+      : ORIGINAL_MESSAGE_TYPE.TEXT
+    if (baileyDto.isAudio) {
+      baileyDto.text = await this.transcribeMessage(
+        Buffer.from(baileyDto.mediaBuffer),
+      )
     }
-    if (baileyDto.hasLocation && baileyDto.location)
-    {
-      baileyDto.text = `/location  latitude:${ baileyDto.location.latitude}, longitude: ${baileyDto.location.longitude}`
+    if (baileyDto.hasLocation && baileyDto.location) {
+      baileyDto.text = `/location  latitude:${baileyDto.location.latitude}, longitude: ${baileyDto.location.longitude}`
     }
-    
-    if ( ! baileyDto?.text ) {
+
+    if (!baileyDto?.text) {
       this.logger.log('message does not contain text', { baileyDto })
       return 'message does not contain text'
     }
-    
-
 
     if (!/^\d+$/.test(baileyDto.companyPhone)) {
-      this.logger.error('companyPhone number not numeric' + baileyDto.companyPhone)
+      this.logger.error(
+        'companyPhone number not numeric' + baileyDto.companyPhone,
+      )
       return 'Phone number not numeric'
     }
-
 
     if (!/^\d+$/.test(baileyDto.userPhone)) {
       this.logger.error('userPhone number not numeric' + baileyDto.userPhone)
       return 'Phone number not numeric'
     }
 
-
-
     const messageInfo = {
-      message : baileyDto.text,
-      userPhone :BigInt(baileyDto.userPhone),
+      message: baileyDto.text,
+      userPhone: BigInt(baileyDto.userPhone),
       companyPhone: BigInt(baileyDto.companyPhone),
       photoUrl: null,
       fromMe: baileyDto.fromMe,
       originalMessageType: baileyDto['originalMessageType'],
-      senderName: baileyDto.fromMe ? '': 'PUSH NAME',
+      senderName: baileyDto.fromMe ? '' : 'PUSH NAME',
     }
 
     if (!messageInfo.message) {
@@ -185,5 +190,4 @@ export class WebhookService {
 
     return 'success'
   }
-
 }

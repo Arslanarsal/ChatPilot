@@ -32,9 +32,9 @@ export type OpenAIScheduleEventPayload = {
 }
 
 export type AiChatMessage = {
-  role: string;
+  role: string
   content: {
-    type: string;
-    text: string;
-  }[];
+    type: string
+    text: string
+  }[]
 }

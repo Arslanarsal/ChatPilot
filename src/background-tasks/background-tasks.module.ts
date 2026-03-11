@@ -1,9 +1,8 @@
-import { Module } from '@nestjs/common'
+import { Module, Global } from '@nestjs/common'
 import { BackgroundTasksController } from './background-tasks.controller'
 import { BullModule } from '@nestjs/bullmq'
 import { ReplyService } from './services/reply.service'
 import { ReplyProcessor } from './processors/reply.processor'
-import { Global } from '@nestjs/common'
 import { BackgroundQueue } from 'src/utils/constants/background.constants'
 
 import { VercelAiModule } from 'src/vercel-ai/vercel-ai.module'
@@ -40,12 +39,7 @@ import { FollowUpProcessor } from './processors/follow-up.processor'
     ),
   ],
   controllers: [BackgroundTasksController],
-  providers: [
-    ReplyService,
-    ReplyProcessor,
-    FollowUpService,
-    FollowUpProcessor,
-  ],
+  providers: [ReplyService, ReplyProcessor, FollowUpService, FollowUpProcessor],
   exports: [ReplyService],
 })
-export class BackgroundTasksModule { }
+export class BackgroundTasksModule {}

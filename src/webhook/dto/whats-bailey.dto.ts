@@ -10,7 +10,7 @@ export class LocationDto {
   latitude: number
 
   @ApiProperty({
-    type: 'number', 
+    type: 'number',
     description: 'Longitude coordinate',
     required: false,
     example: -46.6333,
@@ -105,7 +105,7 @@ export class WhatsBaileyDto {
     required: false,
     example: {},
   })
-  meta?: any;
+  meta?: any
 
   @ApiProperty({
     type: 'boolean',
@@ -123,6 +123,4 @@ export class WhatsBaileyDto {
     },
   })
   location?: LocationDto
-
-
 }

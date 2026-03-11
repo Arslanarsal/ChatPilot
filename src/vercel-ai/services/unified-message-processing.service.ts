@@ -14,7 +14,7 @@ export class UnifiedMessageProcessingService {
     private readonly AiGeminiService: AiGoogleService,
     private readonly contactService: ContactService,
     private readonly datesHelper: DatesHelper,
-  ) { }
+  ) {}
 
   async processClientMessage(
     contact: Contact,
@@ -29,7 +29,7 @@ export class UnifiedMessageProcessingService {
 
     if (text.toLowerCase().includes('/reset')) {
       await this.contactService.archiveContact(contact.id)
-      return `Perfect! You have successfully restarted the conversation. Now you can start again and send your next question or message. I'm here to help!`;
+      return `Perfect! You have successfully restarted the conversation. Now you can start again and send your next question or message. I'm here to help!`
     }
     this.logger.log(`text: ${text}`)
 
@@ -56,13 +56,18 @@ export class UnifiedMessageProcessingService {
     this.logger.log(`dateAugmentedText: ${dateAugmentedText}`)
     this.logger.log(`Using Gemini for company ${companyId}`)
 
-    const chatHistory = await this.contactService.getAiChatHistory(contact.id, true)
+    const chatHistory = await this.contactService.getAiChatHistory(
+      contact.id,
+      true,
+    )
     chatHistory.push({
       role: 'user',
-      content: [{
-        type: 'text',
-        text: dateAugmentedText
-      }],
+      content: [
+        {
+          type: 'text',
+          text: dateAugmentedText,
+        },
+      ],
     })
 
     // Use original contact with companies relation, update total_messages
@@ -70,7 +75,7 @@ export class UnifiedMessageProcessingService {
       ...contact,
       ...updatedContact,
       companies: contact.companies,
-    } as Contact;
+    } as Contact
 
     const response = await this.AiGeminiService.processMessage(
       contactWithCompanies,
