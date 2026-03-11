@@ -1,17 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { CreateCompanyDto } from '../clinic/dto/create-company.dto'
+import { CreateCompanyDto } from '../company/dto/create-company.dto'
 import {
   companies,
   contacts,
   messages,
   whatsapp_connector_server,
 } from '@prisma/client'
-import { WapiService } from '../utils/services/wapi.service'
 import { Prisma } from '@prisma/client'
 import {
   AUTHOR_TYPE,
-  Clinic,
+  Company,
   Contact,
   ORIGINAL_MESSAGE_TYPE,
 } from 'src/utils/constants/types'
@@ -24,7 +23,6 @@ export class ContactService {
   private readonly logger = new Logger(ContactService.name)
   constructor(
     private readonly prisma: PrismaService,
-    private readonly wapi: WapiService,
     private readonly whatsBailey: WhatsBaileyService,
     private readonly datesHelper: DatesHelper
   ) { }
@@ -73,19 +71,19 @@ export class ContactService {
     })
   }
 
-  async sendMessageToClinic(contact: Contact, text: string): Promise<void> {
-    const clinic = contact.companies
-    await this._sendMessage(contact, Number(clinic.phone), text)
-    if (clinic.clinic_notification_phone) {
+  async sendMessageToCompany(contact: Contact, text: string): Promise<void> {
+    const company = contact.companies
+    await this._sendMessage(contact, Number(company.phone), text)
+    if (company.company_notification_phone) {
       await this._sendMessage(
         contact,
-        Number(clinic.clinic_notification_phone),
+        Number(company.company_notification_phone),
         text,
       )
     }
     await this.sendMessageToDevs(
       contact,
-      `_message sent to clinic:_ \n\n${text}`,
+      `_message sent to company:_ \n\n${text}`,
     )
   }
 
@@ -205,22 +203,16 @@ export class ContactService {
     text: string,
     imageUrl?: string,
   ): Promise<void> {
-    const clinic: Clinic = self.companies
+    const company: Company = self.companies
 
-    console.log('clinc no : ', clinic.phone)
+    console.log('company no : ', company.phone)
     console.log('Sending message with params:', { phone, text })
-    if (clinic) {
-      if (clinic.whatsapp_connector_server?.type === 'mega') {
-      } else if (clinic.whatsapp_connector_server?.type === 'zapi') {
-      } else if (
-        clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WAPI
-      ) {
-        await this.wapi.sendMessage(clinic, phone, text, imageUrl)
-      } else if (
-        clinic.whatsapp_connector_server?.type ===
+    if (company) {
+      if (
+        company.whatsapp_connector_server?.type ===
         WhatsAppConnectorType.WHATS_BAILEY
       ) {
-        await this.whatsBailey.sendMessage(clinic, phone, text, imageUrl)
+        await this.whatsBailey.sendMessage(company, phone, text, imageUrl)
       }
     }
   }
@@ -267,7 +259,7 @@ export class ContactService {
   }
 
   async getOrCreateContact(
-    clinic: companies,
+    company: companies,
     phone: number,
     senderName: string | null = null,
   ): Promise<Contact | null> {
@@ -275,7 +267,7 @@ export class ContactService {
       const contact = await this.prisma.contacts.findFirst({
         where: {
           phone: phone,
-          company_id: clinic.id,
+          company_id: company.id,
           archived_on: null,
         },
         include: {
@@ -288,11 +280,11 @@ export class ContactService {
       })
 
       if (!contact) {
-        this.logger.log('creating clinic contact')
+        this.logger.log('creating company contact')
         const newContact = await this.prisma.contacts.create({
           data: {
             phone: phone,
-            company_id: clinic.id,
+            company_id: company.id,
             whatsapp_profile_name: senderName,
           },
           include: {
@@ -303,7 +295,6 @@ export class ContactService {
             },
           },
         })
-        await this.syncContactPhotoUrl(newContact as Contact)
         return newContact as Contact
       }
 
@@ -378,46 +369,26 @@ export class ContactService {
   }
 
   async syncContactPhotoUrl(contact: Contact) {
-    // const contact  =  await this.getContactById(contactId);
     if (!contact) {
       this.logger.log('contact not found')
       return
     }
-
-    const clinic: Clinic = contact.companies
-    if (clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WAPI) {
-      const res = await this.wapi.getClientProfilePicture(contact as Contact)
-      if (!res.success) {
-        this.logger.log(`error : ${res.error} on wapi-getClientProfilePicture`)
-        return
-      }
-      this.logger.log('photoUrl Result', res)
-      const updatedContact = await this.updateContact(contact?.id as number, {
-        photo_url: res?.result,
-      })
-      return updatedContact
-    } else {
-      return
-    }
+    return
   }
 
   async mockTypingState(self: Contact): Promise<void> {
     try {
-      const clinic: Clinic = self.companies
+      const company: Company = self.companies
 
-      if (clinic) {
-        if (clinic.whatsapp_connector_server?.type === 'mega') {
-        } else if (clinic.whatsapp_connector_server?.type === 'zapi') {
-        } else if (clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WAPI) {
-          await this.wapi.mockTypingState(self)
-        } else if (
-          clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) {
+      if (company) {
+        if (
+          company.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) {
           await this.whatsBailey.mockTypingState(self)
         }
       }
     } catch (e) {
       this.logger.error(`error while mocking typing status: `, {
-        clinicPhone: self.companies?.phone,
+        companyPhone: self.companies?.phone,
         contact: self,
       })
       return
@@ -425,26 +396,21 @@ export class ContactService {
   }
 
   async clearTypingState(self: Contact): Promise<void> {
-    const clinic: Clinic = self.companies
+    const company: Company = self.companies
     try {
       this.logger.log('clear Typing State ', {
-        clinicPhone: clinic.phone,
+        companyPhone: company.phone,
         contact: self,
       })
-      if (clinic) {
-        if (clinic.whatsapp_connector_server?.type === 'mega') {
-        } else if (clinic.whatsapp_connector_server?.type === 'zapi') {
-        } else if (clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WAPI) {
-          await this.wapi.clearTypingState(self)
-        }
-        else if (
-          clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) {
+      if (company) {
+        if (
+          company.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) {
           await this.whatsBailey.clearTypingState(self)
         }
       }
     } catch (e) {
       this.logger.error(`error while clearing typing status: `, {
-        clinicPhone: clinic.phone,
+        companyPhone: company.phone,
         contact: self,
       })
       return
@@ -501,22 +467,8 @@ export class ContactService {
     return updatedContact
   }
 
-  async isOnWhatsapp(clinic: Clinic, phone: string) {
-    const res = await this.wapi.isOnWhatsapp(clinic, phone)
-    return res
-  }
-
   async markUnread(contact: Contact) {
-    const clinic: Clinic = contact.companies
-    if (clinic) {
-      if (clinic.whatsapp_connector_server?.type === 'mega') {
-      } else if (clinic.whatsapp_connector_server?.type === 'zapi') {
-      } else if (clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WAPI) {
-        await this.wapi.markUnread(contact)
-      }
-      else if (
-        clinic.whatsapp_connector_server?.type === WhatsAppConnectorType.WHATS_BAILEY) { }
-    }
+    // markUnread not supported in WhatsApp Bailey
   }
 
 

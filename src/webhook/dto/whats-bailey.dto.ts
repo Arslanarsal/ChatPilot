@@ -21,7 +21,7 @@ export class LocationDto {
 export class WhatsBaileyDto {
   @ApiProperty({
     type: 'boolean',
-    description: 'Whether message is from the clinic',
+    description: 'Whether message is from the company',
     example: true,
   })
   fromMe: boolean
@@ -42,10 +42,10 @@ export class WhatsBaileyDto {
 
   @ApiProperty({
     type: 'string',
-    description: 'Clinic phone number',
+    description: 'Company phone number',
     example: '923147581976',
   })
-  clinicPhone: string
+  companyPhone: string
 
   @ApiProperty({
     type: 'boolean',

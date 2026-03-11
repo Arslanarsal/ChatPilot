@@ -18,7 +18,7 @@ export class AiToolsService {
   ) { }
 
   getContactTools(contact: Contact, excludeTools: AiSdkToolsNames[] = []) {
-    const clinic = contact.companies;
+    const company = contact.companies;
     const tools: AiSdkToolConfig = {
 
       save_name: tool({
@@ -26,12 +26,12 @@ export class AiToolsService {
         inputSchema: z.object({ name: z.string().describe("The name of the contact.") }),
         execute: async ({ name }) => {
           try {
-            this.logger.log("tool call started", { context: "save_name", parameters: { name, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone } })
+            this.logger.log("tool call started", { context: "save_name", parameters: { name, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
             await this.contactService.updateField(contact, 'name', name);
-            this.logger.log("tool call finished", { context: "save_name", parameters: { name, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "success" })
+            this.logger.log("tool call finished", { context: "save_name", parameters: { name, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
             return 'success';
           } catch (error) {
-            this.logger.error("tool call failed", { context: "save_name", parameters: { name, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "failed", error: error.message });
+            this.logger.error("tool call failed", { context: "save_name", parameters: { name, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed", error: error.message });
             return 'failed'
           }
         },
@@ -43,12 +43,12 @@ export class AiToolsService {
         inputSchema: z.object({ isWillingToSchedule: z.boolean() }),
         execute: async ({ isWillingToSchedule }) => {
           try {
-            this.logger.log("tool call started", { context: "save_is_willing_to_schedule", parameters: { isWillingToSchedule, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone } })
+            this.logger.log("tool call started", { context: "save_is_willing_to_schedule", parameters: { isWillingToSchedule, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
             await this.contactService.updateField(contact, 'is_willing_to_schedule', isWillingToSchedule);
-            this.logger.log("tool call finished", { context: "save_is_willing_to_schedule", parameters: { isWillingToSchedule, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "success" })
+            this.logger.log("tool call finished", { context: "save_is_willing_to_schedule", parameters: { isWillingToSchedule, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
             return 'success';
           } catch (error) {
-            this.logger.error("tool call failed", { context: "save_is_willing_to_schedule", parameters: { isWillingToSchedule, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "failed", error });
+            this.logger.error("tool call failed", { context: "save_is_willing_to_schedule", parameters: { isWillingToSchedule, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed", error });
             return 'failed'
           }
         },
@@ -59,12 +59,12 @@ export class AiToolsService {
         inputSchema: z.object({ noSchedulingReason: z.string() }),
         execute: async ({ noSchedulingReason }) => {
           try {
-            this.logger.log("tool call started", { context: "save_no_scheduling_reason", parameters: { noSchedulingReason, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone } })
+            this.logger.log("tool call started", { context: "save_no_scheduling_reason", parameters: { noSchedulingReason, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
             await this.contactService.updateField(contact, 'no_scheduling_reason', noSchedulingReason);
-            this.logger.log("tool call finished", { context: "save_no_scheduling_reason", parameters: { noSchedulingReason, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "success" })
+            this.logger.log("tool call finished", { context: "save_no_scheduling_reason", parameters: { noSchedulingReason, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
             return 'success';
           } catch (error) {
-            this.logger.error("tool call failed", { context: "save_no_scheduling_reason", parameters: { noSchedulingReason, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "failed", error });
+            this.logger.error("tool call failed", { context: "save_no_scheduling_reason", parameters: { noSchedulingReason, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed", error });
             return 'failed'
           }
         },
@@ -75,12 +75,12 @@ export class AiToolsService {
         inputSchema: z.object({ isRecommendationGood: z.boolean() }),
         execute: async ({ isRecommendationGood }) => {
           try {
-            this.logger.log("tool call started", { context: "save_is_recommendation_good", parameters: { isRecommendationGood, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone } })
+            this.logger.log("tool call started", { context: "save_is_recommendation_good", parameters: { isRecommendationGood, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
             await this.contactService.updateField(contact, 'is_recommendation_good', isRecommendationGood);
-            this.logger.log("tool call finished", { context: "save_is_recommendation_good", parameters: { isRecommendationGood, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "success" })
+            this.logger.log("tool call finished", { context: "save_is_recommendation_good", parameters: { isRecommendationGood, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
             return 'success';
           } catch (error) {
-            this.logger.error("tool call failed", { context: "save_is_recommendation_good", parameters: { isRecommendationGood, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "failed", error });
+            this.logger.error("tool call failed", { context: "save_is_recommendation_good", parameters: { isRecommendationGood, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed", error });
             return 'failed';
           }
         },
@@ -95,20 +95,20 @@ export class AiToolsService {
         }),
         execute: async ({ value, reason }) => {
           try {
-            this.logger.log("tool call started", { context: "set_needs_review", parameters: { value, reason, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone } })
+            this.logger.log("tool call started", { context: "set_needs_review", parameters: { value, reason, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
 
             const message = reason ? `This client needs assistance +${contact.phone}: ${reason}` : `User question needs human review. Phone: +${contact.phone}`;
 
             await Promise.all([
               this.contactService.updateContact(contact.id, { needs_review: value, is_bot_activated: !value }),
-              this.contactService.sendMessageToClinic(contact, message),
+              this.contactService.sendMessageToCompany(contact, message),
             ]);
 
-            this.logger.log("tool call finished", { context: "set_needs_review", parameters: { value, reason, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "success" })
+            this.logger.log("tool call finished", { context: "set_needs_review", parameters: { value, reason, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
 
             return 'success';
           } catch (error) {
-            this.logger.error("tool call failed", { context: "set_needs_review", parameters: { value, reason, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "failed to perform action", error });
+            this.logger.error("tool call failed", { context: "set_needs_review", parameters: { value, reason, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed to perform action", error });
             return 'failed to perform action';
           }
         },
@@ -119,34 +119,34 @@ export class AiToolsService {
         inputSchema: z.object({ status: z.boolean().describe("True to activate the bot, false to deactivate.") }),
         execute: async ({ status }) => {
           try {
-            this.logger.log("tool call started", { context: "change_bot_status", parameters: { status, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone } })
+            this.logger.log("tool call started", { context: "change_bot_status", parameters: { status, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
 
             await this.contactService.updateContact(contact.id, { is_bot_activated: status });
 
-            this.logger.log("tool call finished", { context: "change_bot_status", parameters: { status, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "success" })
+            this.logger.log("tool call finished", { context: "change_bot_status", parameters: { status, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
 
             return 'success';
           } catch (error) {
-            this.logger.error("tool call failed", { context: "change_bot_status", parameters: { status, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "failed to perform action", error });
+            this.logger.error("tool call failed", { context: "change_bot_status", parameters: { status, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed to perform action", error });
             return 'failed to perform action';
           }
         },
       }),
 
       notify_company: tool({
-        description: 'Sends a specified message to the company/clinic.',
+        description: 'Sends a specified message to the company.',
         inputSchema: z.object({ message: z.string().describe("The content of the message to send.") }),
         execute: async ({ message }) => {
           try {
-            this.logger.log("tool call started", { context: "notify_company", parameters: { message, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone } })
+            this.logger.log("tool call started", { context: "notify_company", parameters: { message, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
 
-            await this.contactService.sendMessageToClinic(contact, `${message}\n\n${contact.name ? `Client name: ${contact.name}` : ''}\nPhone: +${contact.phone}`);
+            await this.contactService.sendMessageToCompany(contact, `${message}\n\n${contact.name ? `Client name: ${contact.name}` : ''}\nPhone: +${contact.phone}`);
 
-            this.logger.log("tool call finished", { context: "notify_company", parameters: { message, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "success" })
+            this.logger.log("tool call finished", { context: "notify_company", parameters: { message, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
 
             return 'success';
           } catch (error) {
-            this.logger.error("tool call failed", { context: "notify_company", parameters: { message, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "failed to perform action", error });
+            this.logger.error("tool call failed", { context: "notify_company", parameters: { message, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed to perform action", error });
             return 'failed to perform action';
           }
         },
@@ -157,15 +157,15 @@ export class AiToolsService {
         inputSchema: z.object({ is_replies_activated: z.boolean().describe('True to activate replies, false to deactivate.') }),
         execute: async ({ is_replies_activated }) => {
           try {
-            this.logger.log("tool call started", { context: "activate_replies", parameters: { is_replies_activated, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone } })
+            this.logger.log("tool call started", { context: "activate_replies", parameters: { is_replies_activated, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone } })
 
             await this.contactService.updateContact(contact.id, { is_replies_activated });
 
-            this.logger.log("tool call finished", { context: "activate_replies", parameters: { is_replies_activated, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "success" })
+            this.logger.log("tool call finished", { context: "activate_replies", parameters: { is_replies_activated, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "success" })
 
             return 'success';
           } catch (error) {
-            this.logger.error("tool call failed", { context: "activate_replies", parameters: { is_replies_activated, contactId: contact.id, contactPhone: contact.phone, companyId: clinic.id, companyPhone: clinic.phone }, result: "failed to perform action", error });
+            this.logger.error("tool call failed", { context: "activate_replies", parameters: { is_replies_activated, contactId: contact.id, contactPhone: contact.phone, companyId: company.id, companyPhone: company.phone }, result: "failed to perform action", error });
             return "failed to perform action";
           }
         },

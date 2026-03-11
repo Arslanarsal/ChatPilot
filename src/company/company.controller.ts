@@ -10,7 +10,7 @@ import {
   Headers,
   Query,
 } from '@nestjs/common'
-import { ClinicService } from './clinic.service'
+import { CompanyService } from './company.service'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { ApiBody, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { Response } from 'express'
@@ -29,27 +29,27 @@ import { IsOnWhatsappDto } from './dto/is-on-whatsapp.dto'
 @Controller('companies')
 export class CompanyController {
   constructor(
-    private readonly clinicService: ClinicService,
+    private readonly companyService: CompanyService,
     private readonly contactService: ContactService,
     private readonly WaFormattingService: WhatsAppFormatter,
     private readonly ConfigService: ConfigsService,
   ) { }
 
-  @ApiOperation({ summary: 'Create Clinic' })
+  @ApiOperation({ summary: 'Create Company' })
   @ApiBody({
     type: CreateCompanyDto,
     description: 'The webhook data in JSON format',
   })
   @Post()
   createCompany(@Body() createWebhookDto: CreateCompanyDto) {
-    return this.clinicService.createCompany(createWebhookDto)
+    return this.companyService.createCompany(createWebhookDto)
   }
   @ApiOperation({
-    summary: 'Sync/Get Connection Status of companies connected with wapi',
+    summary: 'Sync/Get Connection Status of all WhatsApp connected companies',
   })
   @Get('sync-connection_status')
   async syncWapiSessionStatus() {
-    return await this.clinicService.syncAllWapiSessionStatus()
+    return await this.companyService.syncAllSessionStatus()
   }
   @ApiOperation({ summary: 'Send Message from Company to contact' })
   @ApiHeader({
@@ -68,8 +68,8 @@ export class CompanyController {
       throw new UnprocessableEntityException('invalid api key')
     const contact = await this.contactService.getContactById(contactId)
     if (!contact) throw new UnprocessableEntityException('contact not found')
-    const clinic = await this.clinicService.findById(companyId)
-    if (!clinic) throw new UnprocessableEntityException('clinic not found')
+    const company = await this.companyService.findById(companyId)
+    if (!company) throw new UnprocessableEntityException('company not found')
     const contentParts = this.WaFormattingService.splitMessage(data.message)
     const messages: any = []
 
@@ -108,9 +108,9 @@ export class CompanyController {
   ) {
     if (this.ConfigService.chatPilotApiKey !== apiKey)
       throw new UnprocessableEntityException('invalid api key')
-    const clinic = await this.clinicService.findById(companyId)
-    if (!clinic) throw new UnprocessableEntityException('clinic not found')
-    const contact = await this.contactService.getOrCreateContact(clinic, number)
+    const company = await this.companyService.findById(companyId)
+    if (!company) throw new UnprocessableEntityException('company not found')
+    const contact = await this.contactService.getOrCreateContact(company, number)
     if (!contact) throw new UnprocessableEntityException('contact not found')
 
     const contentParts = this.WaFormattingService.splitMessage(data.message)
@@ -142,35 +142,21 @@ export class CompanyController {
     return messages
   }
 
-  @Post('number/is-on-whatsapp')
-
-  async isOnWhatsApp(
-    @Headers('chatPilot-api-key') apiKey: string,
-    @Body() dto: IsOnWhatsappDto,
-  ) {
-    console.log('isOnWhatsApp', dto)
-    if (this.ConfigService.chatPilotApiKey !== apiKey)
-      throw new UnprocessableEntityException('invalid api key')
-    const clinic = await this.clinicService.findById(dto.company_id)
-    if (!clinic) throw new UnprocessableEntityException('clinic not found')
-    const isOnWhatsApp = await this.contactService.isOnWhatsapp(clinic, dto.phone_number)
-    return isOnWhatsApp
-  }
 
   @ApiOperation({ summary: 'Create Session for Company' })
   @Post(':id/create_session')
   async createSession(@Param('id', ParseIntPipe) id: number) {
-    return await this.clinicService.createSession(id)
+    return await this.companyService.createSession(id)
   }
 
   @ApiOperation({ summary: 'Get  wapi Session status for Company ' })
   @Get(':id/connection_status')
   async getSessionStatus(@Param('id', ParseIntPipe) id: number) {
-    return await this.clinicService.getSessionStatus(id)
+    return await this.companyService.getSessionStatus(id)
   }
   @ApiOperation({ summary: 'Get wapi QrCode for Company ' })
   @Get(':id/get_qr')
   async getQrCode(@Res() res: Response, @Param('id', ParseIntPipe) id: number) {
-    return await this.clinicService.getSessionQrCode(res, id)
+    return await this.companyService.getSessionQrCode(res, id)
   }
 }

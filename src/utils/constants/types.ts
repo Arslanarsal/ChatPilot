@@ -1,10 +1,10 @@
 import { companies, contacts, whatsapp_connector_server } from '@prisma/client'
 import { ToolSet } from 'ai'
 
-export type Clinic = companies & {
+export type Company = companies & {
   whatsapp_connector_server: whatsapp_connector_server | null
 }
-export type Contact = contacts & { companies: Clinic }
+export type Contact = contacts & { companies: Company }
 
 // AI SDK Tool types
 export type AiSdkToolsNames =

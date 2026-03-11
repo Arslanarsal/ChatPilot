@@ -23,14 +23,14 @@ model companies {
   cal_api_key                  String?                    @db.VarChar
   cal_booking_length           BigInt?
   phone                        BigInt                     @unique(map: "unique phone")
-  clinic_notification_phone    BigInt?
+  company_notification_phone   BigInt?
   updated_at                   DateTime?                  @db.Timestamptz(6)
   is_bot_activated             Boolean?                   @default(true)
-  wapi_id                      String?                    @unique(map: "poc_clinics_companies_wapi_id_key")
+  session_id                   String?                    @unique(map: "poc_clinics_companies_wapi_id_key")
   url_id                       String                     @default(dbgenerated("\"substring\"(md5((random())::text), 1, 6)")) @db.VarChar(6)
   whatsapp_connector_server_id Int?
   crm_provider                 String?                    @db.VarChar
-  wapi_connection_status       Boolean?
+  whatsapp_connection_status   Boolean?
   assistant_id                 Int?
   assistant_instructions       assistant_instructions?    @relation(fields: [assistant_id], references: [id])
   whatsapp_connector_server    whatsapp_connector_server? @relation(fields: [whatsapp_connector_server_id], references: [id], map: "poc_clinics_companies_whatsapp_connector_server_id_fkey")

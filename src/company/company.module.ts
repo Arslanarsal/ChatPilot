@@ -1,5 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common'
-import { ClinicService } from './clinic.service'
+import { CompanyService } from './company.service'
 import { CompanyController } from './company.controller'
 import { ContactModule } from 'src/contact/contact.module'
 import { PrismaModule } from 'src/prisma/prisma.module'
@@ -12,7 +12,7 @@ import { UtilsModule } from 'src/utils/utils.module'
     forwardRef(() => ContactModule)
   ],
   controllers: [CompanyController],
-  providers: [ClinicService],
-  exports: [ClinicService],
+  providers: [CompanyService],
+  exports: [CompanyService],
 })
-export class ClinicModule {}
+export class CompanyModule {}

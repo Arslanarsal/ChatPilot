@@ -4,7 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service'
 import axios, { AxiosResponse } from 'axios'
 import { DateTime } from 'luxon'
 import { ConfigsService } from 'src/config'
-import { Clinic, Contact } from '../constants/types'
+import { Company, Contact } from '../constants/types'
 
 @Injectable()
 export class N8NService {
@@ -33,17 +33,17 @@ export class N8NService {
   }
 
   async getAvailableAppointments(
-    clinic: Clinic,
+    company: Company,
     contact: Contact,
     startDate: string,
     endDate: string,
   ): Promise<any> {
     const params = {
-      company_id: clinic.id,
+      company_id: company.id,
       startTime: startDate,
       endTime: endDate,
       service: [], // Removed: recommended_treatments and treatments_of_interest columns no longer exist
-      crm_provider: clinic.crm_provider,
+      crm_provider: company.crm_provider,
     }
 
     const response = await this.postRequest(
@@ -86,7 +86,7 @@ export class N8NService {
   }
 
   async saveContact(
-    clinic: Clinic,
+    company: Company,
     contact: Contact,
     email: string,
     cpf: string,
@@ -97,13 +97,13 @@ export class N8NService {
       // pain_points, recommended_treatments, treatments_of_interest columns no longer exist
       email,
       cpf,
-      company_id: clinic.id,
+      company_id: company.id,
     }
     return this.postRequest('save_contact', payload)
   }
 
   async saveAppointment(
-    clinic: Clinic,
+    company: Company,
     contact: Contact,
     date: string,
   ): Promise<any> {
@@ -111,18 +111,18 @@ export class N8NService {
       name: contact.name,
       phone: contact.phone,
       date,
-      company_id: clinic.id,
-      crm_provider: clinic.crm_provider,
+      company_id: company.id,
+      crm_provider: company.crm_provider,
       service: [], // Removed: recommended_treatments and treatments_of_interest columns no longer exist
     }
     return this.postRequest('save_appointment', payload)
   }
 
-  async cancelAppointment(clinic: Clinic, contact: Contact): Promise<any> {
+  async cancelAppointment(company: Company, contact: Contact): Promise<any> {
     const payload = {
       phone: contact.phone,
-      company_id: clinic.id,
-      crm_provider: clinic.crm_provider,
+      company_id: company.id,
+      crm_provider: company.crm_provider,
     }
     return this.postRequest('cancel_appointment', payload)
   }

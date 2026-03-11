@@ -2,7 +2,6 @@ import { IsEnum, IsUrl } from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 
 export enum WhatsAppConnectorType {
-  WAPI = 'wapi',
   WHATS_BAILEY = 'whats_bailey',
 }
 export class CreateWhatsappConnectorDto {

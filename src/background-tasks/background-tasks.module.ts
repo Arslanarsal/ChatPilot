@@ -15,7 +15,7 @@ import { ContactModule } from 'src/contact/contact.module'
 // import { FollowUpService } from './services/follow-up.service'
 import { BullBoardModule } from '@bull-board/nestjs'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
-import { ClinicModule } from 'src/clinic/clinic.module'
+import { CompanyModule } from 'src/company/company.module'
 import { WaConnService } from './services/whatsapp-connection-status.service'
 import { WaConnSProcessor } from './processors/whatsapp-connection-status.processor'
 
@@ -26,7 +26,7 @@ import { WaConnSProcessor } from './processors/whatsapp-connection-status.proces
   imports: [
     VercelAiModule,
     ContactModule,
-    ClinicModule,
+    CompanyModule,
     BullModule.registerQueue(
       {
         name: BackgroundQueue.REPLIES, // Queue name

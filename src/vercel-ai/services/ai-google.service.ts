@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { generateText, LanguageModelUsage, stepCountIs } from 'ai'
-import { AiChatMessage, Clinic, Contact } from 'src/utils/constants/types'
+import { AiChatMessage, Company, Contact } from 'src/utils/constants/types'
 import { DatesHelper } from 'src/utils/services/dates.service'
 import { AiToolsService } from './ai-tools.service'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
@@ -31,7 +31,7 @@ export class AiGoogleService {
     contact: Contact,
     chatHistory: AiChatMessage[]
   ): Promise<{ text: string, usage: LanguageModelUsage, model: ModelKey, provider: ProviderKey }> {
-    const company = contact.companies as Clinic
+    const company = contact.companies as Company
     const assistant = await this.aiAssistantConfigService.getAssistantConfig(contact)
 
 

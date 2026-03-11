@@ -12,22 +12,22 @@ export class CalComService {
   constructor(private readonly datesHelper: DatesHelper) {}
 
   async getAvailableAppointments(
-    clinic: companies,
+    company: companies,
     startDate: string,
     endDate: string,
   ): Promise<Record<string, any> | string> {
     const url = `${this.baseUrl}/slots/available`
 
     const params = {
-      duration: clinic.cal_booking_length?.toString(),
+      duration: company.cal_booking_length?.toString(),
       startTime: startDate,
       endTime: endDate,
-      eventTypeId: clinic.cal_event_type_id?.toString(),
-      eventTypeSlug: clinic.cal_event_slug,
+      eventTypeId: company.cal_event_type_id?.toString(),
+      eventTypeSlug: company.cal_event_slug,
     }
 
     const headers = {
-      Authorization: `Bearer ${clinic.cal_api_key}`,
+      Authorization: `Bearer ${company.cal_api_key}`,
       'Content-Type': 'application/json',
       'cal-api-version': '2024-08-13',
     }
@@ -53,7 +53,7 @@ export class CalComService {
   }
 
   async bookAppointment(
-    clinic: companies,
+    company: companies,
     date: string,
     name: string,
     email: string,
@@ -68,14 +68,14 @@ export class CalComService {
     const url = `${this.baseUrl}/bookings`
 
     const headers = {
-      Authorization: `Bearer ${clinic.cal_api_key}`,
+      Authorization: `Bearer ${company.cal_api_key}`,
       'Content-Type': 'application/json',
       'cal-api-version': '2024-08-13',
     }
 
     const payload = {
       start: date,
-      eventTypeId: clinic.cal_event_type_id,
+      eventTypeId: company.cal_event_type_id,
       attendee: {
         name,
         email,
@@ -116,7 +116,7 @@ export class CalComService {
   }
 
   async cancelAppointment(
-    clinic: companies,
+    company: companies,
     contact: Contact,
   ): Promise<{
     success: boolean
@@ -127,7 +127,7 @@ export class CalComService {
     const url = `${this.baseUrl}/bookings/${contact.crm_appointment_id}/cancel`
 
     const headers = {
-      // Authorization: `Bearer ${clinic.cal_api_key}`,
+      // Authorization: `Bearer ${company.cal_api_key}`,
       'Content-Type': 'application/json',
       'cal-api-version': '2024-08-13',
     }

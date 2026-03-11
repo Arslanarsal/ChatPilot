@@ -16,21 +16,21 @@ export class AppointmentService {
   ) {}
 
   async getAvailableAppointments(
-    clinic: companies,
+    company: companies,
     startDate: string,
     endDate: string,
   ): Promise<Record<string, any> | string> {
     try {
       let response
-      if (clinic.crm_provider === 'cal.com') {
+      if (company.crm_provider === 'cal.com') {
         response = await this.CalComService.getAvailableAppointments(
-          clinic,
+          company,
           startDate,
           endDate,
         )
       } else {
         this.logger.error(
-          `invalid calender provider ${clinic.crm_provider} or get appointments isn't configured for it yet`,
+          `invalid calender provider ${company.crm_provider} or get appointments isn't configured for it yet`,
         )
         return 'Failed to fetch available slots'
       }
@@ -51,7 +51,7 @@ export class AppointmentService {
   }
 
   async bookAppointment(
-    clinic: companies,
+    company: companies,
     date: string,
     name: string,
     email: string,
@@ -65,9 +65,9 @@ export class AppointmentService {
   }> {
     try {
       let response
-      if (clinic.crm_provider === 'cal.com') {
+      if (company.crm_provider === 'cal.com') {
         response = await this.CalComService.bookAppointment(
-          clinic,
+          company,
           this.datesHelper.addHours(date, 3),
           name,
           email,
@@ -76,9 +76,9 @@ export class AppointmentService {
       } else {
         response = {
           success: false,
-          error: `Booking failed due to calender provider issue currently supports cal.com only but provide clinic provider is ${clinic.crm_provider}`,
+          error: `Booking failed due to calender provider issue currently supports cal.com only but provide company provider is ${company.crm_provider}`,
           date: null,
-          provider: clinic.crm_provider,
+          provider: company.crm_provider,
           data: null,
         }
         return response
@@ -88,9 +88,9 @@ export class AppointmentService {
     } catch (error: any) {
       const response = {
         success: false,
-        error: `Booking failed due to calender provider issue currently supports cal.com only but provide clinic provider is ${clinic.crm_provider}`,
+        error: `Booking failed due to calender provider issue currently supports cal.com only but provide company provider is ${company.crm_provider}`,
         date: null,
-        provider: clinic.crm_provider,
+        provider: company.crm_provider,
         data: null,
       }
       return response
@@ -98,7 +98,7 @@ export class AppointmentService {
   }
 
   async cancelAppointment(
-    clinic: companies,
+    company: companies,
     contact:Contact
   ): Promise<{
     success: boolean
@@ -109,17 +109,17 @@ export class AppointmentService {
   }> {
     try {
       let response
-      if (clinic.crm_provider === 'cal.com') {
+      if (company.crm_provider === 'cal.com') {
         response = await this.CalComService.cancelAppointment(
-          clinic,
+          company,
           contact
         )
       } else {
         response = {
           success: false,
-          error: `Booking failed due to calender provider issue currently supports cal.com only but provide clinic provider is ${clinic.crm_provider}`,
+          error: `Booking failed due to calender provider issue currently supports cal.com only but provide company provider is ${company.crm_provider}`,
           date: null,
-          provider: clinic.crm_provider,
+          provider: company.crm_provider,
           data: null,
         }
         return response
@@ -129,9 +129,9 @@ export class AppointmentService {
     } catch (error: any) {
       const response = {
         success: false,
-        error: `Booking failed due to calender provider issue currently supports cal.com only but provide clinic provider is ${clinic.crm_provider}`,
+        error: `Booking failed due to calender provider issue currently supports cal.com only but provide company provider is ${company.crm_provider}`,
         date: null,
-        provider: clinic.crm_provider,
+        provider: company.crm_provider,
         data: null,
       }
       return response

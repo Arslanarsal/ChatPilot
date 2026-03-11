@@ -29,7 +29,7 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => BigInt(value))
-  clinic_notification_phone?: number
+  company_notification_phone?: number
 
   @ApiPropertyOptional({ example: true })
   @IsOptional()

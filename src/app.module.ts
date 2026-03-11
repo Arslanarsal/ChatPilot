@@ -13,7 +13,7 @@ import { BullModule } from '@nestjs/bullmq'
 import { VercelAiModule } from './vercel-ai/vercel-ai.module'
 import { UtilsModule } from './utils/utils.module'
 import { ContactModule } from './contact/contact.module'
-import { ClinicModule } from './clinic/clinic.module'
+import { CompanyModule } from './company/company.module'
 import { ExpressAdapter } from '@bull-board/express'
 import { BullBoardModule } from '@bull-board/nestjs'
 import { bullBoardAuthMiddleware } from './utils/Middlewares/bull-board-auth.middleware'
@@ -29,7 +29,7 @@ import { WhatsappConnectorModule } from './whatsapp-connector/whatsapp-connector
     BackgroundTasksModule,
     VercelAiModule,
     UtilsModule,
-    ClinicModule,
+    CompanyModule,
     ContactModule,
 
     BullModule.forRoot({
@@ -53,7 +53,7 @@ import { WhatsappConnectorModule } from './whatsapp-connector/whatsapp-connector
       ],
     }),
     ContactModule,
-    ClinicModule,
+    CompanyModule,
     WhatsappConnectorModule,
   ],
   controllers: [AppController],

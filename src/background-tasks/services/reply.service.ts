@@ -13,8 +13,8 @@ export class ReplyService {
     clientId: number,
     message?: string,
     contactPhone?: BigInt,
-    clinicId?: number,
-    clinicPhone?: BigInt,
+    companyId?: number,
+    companyPhone?: BigInt,
     fromMe?: boolean,
     originalMessageType?: string,
     senderName?: string

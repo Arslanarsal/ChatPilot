@@ -9,9 +9,9 @@ import {
 import axios from 'axios'
 import { whatsapp_connector_server } from '@prisma/client'
 import { ConfigsService } from 'src/config'
-import { Clinic, Contact } from '../constants/types'
+import { Company, Contact } from '../constants/types'
 import * as QRCode from 'qrcode'
-import { ClinicService } from 'src/clinic/clinic.service'
+import { CompanyService } from 'src/company/company.service'
 
 
 @Injectable()
@@ -20,20 +20,20 @@ export class WhatsBaileyService {
   constructor(
 
     private readonly config: ConfigsService,
-    @Inject(forwardRef(() => ClinicService))
-    private readonly clinicService: ClinicService,
+    @Inject(forwardRef(() => CompanyService))
+    private readonly companyService: CompanyService,
   ) {}
 
   async sendMessage(
-    clinic: Clinic,
+    company: Company,
     phone: number,
     message: string,
     imageUrl?: string,
     videoUrl?: string,
   ): Promise<boolean> {
-    const typingPayload: any = { phone, companies: clinic }
+    const typingPayload: any = { phone, companies: company }
     // this.mockTypingState(typingPayload)
-    const url = `${clinic.whatsapp_connector_server?.url}/api/v1/whatsapp/${clinic.wapi_id}/send-message`
+    const url = `${company.whatsapp_connector_server?.url}/api/v1/whatsapp/${company.session_id}/send-message`
     const chatId = `${phone}@c.us`
 
     const config = {
@@ -85,34 +85,34 @@ export class WhatsBaileyService {
     }
   }
 
-  async getSessionStatus(clinic: Clinic): Promise<{
+  async getSessionStatus(company: Company): Promise<{
     success: boolean
     state?: string
     message?: string
     error?: string
   }> {
     try {
-      if (clinic.wapi_id === null) {
-        this.logger.error('company Whatsapp Server id is not defined', {
-          companyId: clinic.id,
-          phone: clinic.phone,
-          wapi_id: clinic.wapi_id,
-          wapi_url: clinic.whatsapp_connector_server?.url,
-          type : clinic.whatsapp_connector_server?.type,
-          error: 'company wapi_id is not defined',
+      if (company.session_id === null) {
+        this.logger.error('company session_id is not defined', {
+          companyId: company.id,
+          phone: company.phone,
+          session_id: company.session_id,
+          server_url: company.whatsapp_connector_server?.url,
+          type : company.whatsapp_connector_server?.type,
+          error: 'company session_id is not defined',
         })
-        return { success: false, message: 'company  Whatsapp Server id  is not defined' }
+        return { success: false, message: 'company session_id is not defined' }
       }
-      const url = `${clinic?.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/${clinic.wapi_id}/status`
+      const url = `${company?.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/${company.session_id}/status`
       this.logger.log('URL:', url)
       const response = await axios.get(url)
 
       if (response.status !== 200) {
-        this.logger.error('error while fetching wapi session status', {
-          companyId: clinic.id,
-          phone: clinic.phone,
-          wapi_id: clinic.wapi_id,
-          wapi_url: clinic.whatsapp_connector_server?.url,
+        this.logger.error('error while fetching bailey session status', {
+          companyId: company.id,
+          phone: company.phone,
+          session_id: company.session_id,
+          server_url: company.whatsapp_connector_server?.url,
           error: `Error starting session: ${response?.status} res.data: ${JSON.stringify(response?.data)} `,
         })
         return {
@@ -127,10 +127,10 @@ export class WhatsBaileyService {
       }
     } catch (e) {
       this.logger.error('error while fetching WhatsBailey session status', {
-        companyId: clinic.id,
-        phone: clinic.phone,
-        wapi_id: clinic.wapi_id,
-        wapi_url: clinic.whatsapp_connector_server?.url,
+        companyId: company.id,
+        phone: company.phone,
+        session_id: company.session_id,
+        server_url: company.whatsapp_connector_server?.url,
         error: e?.message || 'Unknown error',
       })
       return { success: false, message: 'error during WhatsBailey status api call' }
@@ -139,13 +139,13 @@ export class WhatsBaileyService {
 
   async getSessionQrCode(
     res,
-    clinic: Clinic,
+    company: Company,
   ): Promise<{
     success: boolean
     qr?: string
     error?: string
   }> {
-    const url = `${clinic?.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/qrcode/${clinic.wapi_id}`
+    const url = `${company?.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/qrcode/${company.session_id}`
     const response = await axios.get(url)
 
     if (response.status !== 200 || !response.data.success) {
@@ -182,7 +182,7 @@ export class WhatsBaileyService {
     }
   }
   async startSession(
-    clinic: Clinic,
+    company: Company,
     sever: whatsapp_connector_server,
   ): Promise<{
     success: boolean
@@ -192,7 +192,7 @@ export class WhatsBaileyService {
     const url = `${sever?.url}/api/v1/whatsapp/connect`
 
 
-    const response = await axios.post(url,{id:`${clinic.id}`})
+    const response = await axios.post(url,{id:`${company.id}`})
 
     if (response.status !== 201) {
       const errorMessage = `Error starting session: ${response.status} ${response.data}`
@@ -210,15 +210,15 @@ export class WhatsBaileyService {
     result?: string
     error?: string
   }> {
-    const clinic: Clinic = contact.companies
+    const company: Company = contact.companies
     const sever: whatsapp_connector_server | null =
-      clinic.whatsapp_connector_server
+      company.whatsapp_connector_server
 
     const url = `${sever?.url}/api/v1/whatsapp/chat/mock-typing`
 
     const body = {
       number: `${contact.phone}`,
-      session: clinic.wapi_id,
+      session: company.session_id,
     }
     const response = await axios.post(url, body)
 
@@ -237,14 +237,14 @@ export class WhatsBaileyService {
     result?: string
     error?: string
   }> {
-    const clinic: Clinic = contact.companies
+    const company: Company = contact.companies
     const sever: whatsapp_connector_server | null =
-      clinic.whatsapp_connector_server
+      company.whatsapp_connector_server
     const url = `${sever?.url}/api/v1/whatsapp/chat/clear-mock-typing`
 
     const body = {
       number: `${contact.phone}`,
-      session: clinic.wapi_id,
+      session: company.session_id,
     }
 
     const response = await axios.post(url, body)

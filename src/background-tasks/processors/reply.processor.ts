@@ -4,7 +4,7 @@ import { Job } from 'bullmq'
 import { UnifiedMessageProcessingService } from 'src/vercel-ai/services/unified-message-processing.service'
 import { BackgroundQueue } from 'src/utils/constants/background.constants'
 import { ContactService } from 'src/contact/contact.service'
-import { AUTHOR_TYPE, Clinic, Contact } from 'src/utils/constants/types'
+import { AUTHOR_TYPE, Company, Contact } from 'src/utils/constants/types'
 import { WhatsAppFormatter } from '../../utils/services/whatsapp-formatter.helper'
 import { messages } from '@prisma/client'
 
@@ -29,7 +29,7 @@ export class ReplyProcessor extends WorkerHost {
     if (contact) {
       if (contact.messages.length > 0) {
     
-        const clinic = contact.companies as Clinic;
+        const company = contact.companies as Company;
         const combinedMessages = this.formatMessage(contact.messages);
         this.logger.log(`combinedMessages: ${combinedMessages}`)
 
@@ -43,7 +43,7 @@ export class ReplyProcessor extends WorkerHost {
 
         this.logger.log(`open AI Message ===> ${contact.phone} `, {
           openAIMessage,
-          contactInfo: `${contact.phone}  clinicPhone: ${clinic.phone} `,
+          contactInfo: `${contact.phone}  companyPhone: ${company.phone} `,
         })
         // save message in db and also send to contact
         if (!openAIMessage) {

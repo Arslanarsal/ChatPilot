@@ -19,7 +19,7 @@ export class UnifiedMessageProcessingService {
   async processClientMessage(
     contact: Contact,
     text: string,
-    clinicId: number,
+    companyId: number,
     isUnauthorized: boolean,
   ): Promise<string | null> {
     this.logger.log(`contact: ${contact}`)
@@ -59,7 +59,7 @@ export class UnifiedMessageProcessingService {
       ${this.datesHelper.getDateAliases()}]
       `
     this.logger.log(`dateAugmentedText: ${dateAugmentedText}`)
-    this.logger.log(`Using Gemini for company ${clinicId}`)
+    this.logger.log(`Using Gemini for company ${companyId}`)
 
     const chatHistory = await this.contactService.getAiChatHistory(contact.id, true)
     chatHistory.push({
