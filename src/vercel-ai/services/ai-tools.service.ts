@@ -9,6 +9,7 @@ import {
   Contact,
 } from 'src/utils/constants/types'
 import { PrismaService } from 'src/prisma/prisma.service'
+import { AppointmentService } from 'src/utils/services/appointment.service'
 
 @Injectable()
 export class AiToolsService {
@@ -19,6 +20,7 @@ export class AiToolsService {
     private readonly contactService: ContactService,
     private readonly datesHelperService: DatesHelper,
     private readonly prisma: PrismaService,
+    private readonly appointmentService: AppointmentService,
   ) {}
 
   getContactTools(contact: Contact, excludeTools: AiSdkToolsNames[] = []) {
@@ -306,6 +308,177 @@ export class AiToolsService {
               error,
             })
             return 'failed to perform action'
+          }
+        },
+      }),
+
+      get_available_slots: tool({
+        description:
+          'Fetches available appointment slots from the calendar. Use this when the customer wants to schedule or book an appointment. Returns available time slots grouped by date.',
+        inputSchema: z.object({
+          startDate: z
+            .string()
+            .describe(
+              'Start date in YYYY-MM-DD format for the search range.',
+            ),
+          endDate: z
+            .string()
+            .describe('End date in YYYY-MM-DD format for the search range.'),
+        }),
+        execute: async ({ startDate, endDate }) => {
+          try {
+            this.logger.log('tool call started', {
+              context: 'get_available_slots',
+              parameters: {
+                startDate,
+                endDate,
+                contactId: contact.id,
+                companyId: company.id,
+              },
+            })
+
+            const result =
+              await this.appointmentService.getAvailableAppointments(
+                company,
+                startDate,
+                endDate,
+              )
+
+            if (typeof result === 'string') {
+              return result
+            }
+
+            this.logger.log('tool call finished', {
+              context: 'get_available_slots',
+              result: 'success',
+            })
+
+            return JSON.stringify(result)
+          } catch (error) {
+            this.logger.error('tool call failed', {
+              context: 'get_available_slots',
+              error: error.message,
+            })
+            return 'Failed to fetch available slots. Please try again.'
+          }
+        },
+      }),
+
+      book_appointment: tool({
+        description:
+          'Books an appointment at a specific date and time. Use this after showing available slots and the customer confirms a time. The date must be one of the available slots returned by get_available_slots.',
+        inputSchema: z.object({
+          date: z
+            .string()
+            .describe(
+              'The exact date and time for the appointment in ISO 8601 format (e.g. 2024-03-22T10:00:00).',
+            ),
+          name: z
+            .string()
+            .describe('The name of the person booking the appointment.'),
+          email: z
+            .string()
+            .describe('The email address of the person booking.'),
+        }),
+        execute: async ({ date, name, email }) => {
+          try {
+            this.logger.log('tool call started', {
+              context: 'book_appointment',
+              parameters: {
+                date,
+                name,
+                email,
+                contactId: contact.id,
+                companyId: company.id,
+              },
+            })
+
+            const result = await this.appointmentService.bookAppointment(
+              company,
+              date,
+              name,
+              email,
+              Number(contact.phone),
+            )
+
+            if (result.success) {
+              await this.contactService.updateContact(contact.id, {
+                schedule_event: result,
+                crm_appointment_id: result.data?.data?.uid || null,
+                crm_appointment_at: new Date(),
+              })
+
+              this.logger.log('tool call finished', {
+                context: 'book_appointment',
+                result: 'success',
+              })
+
+              return `Appointment booked successfully for ${result.date || date}.`
+            }
+
+            return `Booking failed: ${result.error}`
+          } catch (error) {
+            this.logger.error('tool call failed', {
+              context: 'book_appointment',
+              error: error.message,
+            })
+            return 'Failed to book appointment. Please try again.'
+          }
+        },
+      }),
+
+      cancel_appointment: tool({
+        description:
+          'Cancels the current appointment for this contact. Use this when the customer wants to cancel their existing booking.',
+        inputSchema: z.object({
+          reason: z
+            .string()
+            .optional()
+            .describe('The reason for cancellation.'),
+        }),
+        execute: async ({ reason }) => {
+          try {
+            this.logger.log('tool call started', {
+              context: 'cancel_appointment',
+              parameters: {
+                reason,
+                contactId: contact.id,
+                companyId: company.id,
+                appointmentId: contact.crm_appointment_id,
+              },
+            })
+
+            if (!contact.crm_appointment_id) {
+              return 'No existing appointment found to cancel.'
+            }
+
+            const result = await this.appointmentService.cancelAppointment(
+              company,
+              contact,
+            )
+
+            if (result.success) {
+              await this.contactService.updateContact(contact.id, {
+                crm_appointment_at: null,
+                schedule_event: null,
+                crm_appointment_id: null,
+              })
+
+              this.logger.log('tool call finished', {
+                context: 'cancel_appointment',
+                result: 'success',
+              })
+
+              return 'Appointment cancelled successfully.'
+            }
+
+            return `Cancellation failed: ${result.error}`
+          } catch (error) {
+            this.logger.error('tool call failed', {
+              context: 'cancel_appointment',
+              error: error.message,
+            })
+            return 'Failed to cancel appointment. Please try again.'
           }
         },
       }),

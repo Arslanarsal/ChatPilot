@@ -13,6 +13,9 @@ export type AiSdkToolsNames =
   | 'change_bot_status'
   | 'notify_company'
   | 'activate_replies'
+  | 'get_available_slots'
+  | 'book_appointment'
+  | 'cancel_appointment'
 
 export type AiSdkToolConfig = ToolSet
 export enum AUTHOR_TYPE {

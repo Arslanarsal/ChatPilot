@@ -1,6 +1,5 @@
-import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import axios, { AxiosRequestConfig } from 'axios'
-import { DatesHelper } from './dates.service'
 import { companies } from '@prisma/client'
 import { Contact } from '../constants/types'
 
@@ -8,8 +7,6 @@ import { Contact } from '../constants/types'
 export class CalComService {
   private readonly logger = new Logger(CalComService.name)
   private readonly baseUrl = 'https://api.cal.com/v2'
-
-  constructor(private readonly datesHelper: DatesHelper) {}
 
   async getAvailableAppointments(
     company: companies,
@@ -36,18 +33,9 @@ export class CalComService {
 
     try {
       const response = await axios.get(url, config)
-      // const slots = response.data?.data?.slots || {};
-      // console.log('slots',response.data?.data?.slots );
-      // const slotsBr = {};
-      // for (const [date, times] of Object.entries(slots)) {
-      //   slotsBr[date] = (times as any[]).map((time: any) => {
-      //     const localTime = this.datesHelper.convertFromZulu(time.time);
-      //     return { time: this.datesHelper.toHumanDate(localTime) };
-      //   });
-      // }
-
-      return response
+      return response.data
     } catch (error: any) {
+      this.logger.error('Failed to fetch available slots', error?.message)
       return 'Failed to fetch available slots'
     }
   }
@@ -127,7 +115,7 @@ export class CalComService {
     const url = `${this.baseUrl}/bookings/${contact.crm_appointment_id}/cancel`
 
     const headers = {
-      // Authorization: `Bearer ${company.cal_api_key}`,
+      Authorization: `Bearer ${company.cal_api_key}`,
       'Content-Type': 'application/json',
       'cal-api-version': '2024-08-13',
     }

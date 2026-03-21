@@ -1,9 +1,7 @@
-import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common'
-import axios, { AxiosRequestConfig } from 'axios'
+import { Injectable, Logger } from '@nestjs/common'
 import { DatesHelper } from './dates.service'
 import { companies } from '@prisma/client'
 import { CalComService } from './calcom.service'
-import { throws } from 'assert'
 import { Contact } from '../constants/types'
 
 @Injectable()
@@ -34,8 +32,7 @@ export class AppointmentService {
         )
         return 'Failed to fetch available slots'
       }
-      const slots = response.data?.data?.slots || {}
-      console.log('slots', response.data?.data?.slots)
+      const slots = response?.data?.slots || {}
       const slotsBr = {}
       for (const [date, times] of Object.entries(slots)) {
         slotsBr[date] = (times as any[]).map((time: any) => {
