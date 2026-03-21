@@ -297,7 +297,7 @@ Generate ONLY the system prompt text, no explanations.`,
     const [contactsCount, messagesCount, botMessagesCount, company] =
       await Promise.all([
         this.prisma.contacts.count({
-          where: { company_id: companyId, archived_on: null },
+          where: { company_id: companyId },
         }),
         this.prisma.messages.count({
           where: { contacts: { company_id: companyId } },
@@ -346,7 +346,6 @@ Generate ONLY the system prompt text, no explanations.`,
     const skip = (page - 1) * limit
     const where: any = {
       company_id: companyId,
-      archived_on: null,
     }
 
     if (search) {

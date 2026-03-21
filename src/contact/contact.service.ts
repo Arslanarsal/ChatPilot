@@ -43,7 +43,7 @@ export class ContactService {
 
   async getContactById(id: number): Promise<Contact> {
     return (await this.prisma.contacts.findUnique({
-      where: { id, archived_on: null },
+      where: { id },
       include: {
         companies: {
           include: {
@@ -76,9 +76,10 @@ export class ContactService {
   }
 
   async archiveContact(contactId: number) {
-    await this.updateContact(contactId, {
-      archived_on: new Date(),
-    })
+    await Promise.all([
+      this.resetContact(contactId),
+      this.prisma.messages.deleteMany({ where: { contact_id: contactId } }),
+    ])
   }
 
   async markMessagesProcessed(
@@ -265,15 +266,15 @@ export class ContactService {
 
       // Build where clause: search by LID if isFromLid, otherwise by phone (with optional LID match)
       const whereClause: any = isFromLid
-        ? { lid: userlid, company_id: company.id, archived_on: null }
+        ? { lid: userlid, company_id: company.id }
         : userlid != null
           ? {
               OR: [
-                { phone: phone, company_id: company.id, archived_on: null },
-                { lid: userlid, company_id: company.id, archived_on: null },
+                { phone: phone, company_id: company.id },
+                { lid: userlid, company_id: company.id },
               ],
             }
-          : { phone: phone, company_id: company.id, archived_on: null }
+          : { phone: phone, company_id: company.id }
 
       const contact = await this.prisma.contacts.findFirst({
         where: whereClause,

@@ -45,7 +45,6 @@ export class FollowUpProcessor extends WorkerHost {
         is_follow_up_sent: false,
         is_bot_activated: true,
         is_replies_activated: true,
-        archived_on: null,
         last_message_received: { lt: cutoffDate },
       },
       include: {
