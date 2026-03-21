@@ -150,7 +150,9 @@ export class ContactService {
       authorType,
       originalMessageType,
     )
-    await this._sendMessage(self, Number(self.phone), text, mediaUrl)
+    const isFromLid = !self.phone && !!self.lid
+    const sendNumber = self.phone ? Number(self.phone) : Number(self.lid)
+    await this._sendMessage(self, sendNumber, text, mediaUrl, isFromLid)
   }
 
   async saveOutgoingMessage(
@@ -180,6 +182,7 @@ export class ContactService {
     phone: number,
     text: string,
     imageUrl?: string,
+    isFromLid: boolean = false,
   ): Promise<void> {
     const company: Company = self.companies
 
@@ -188,7 +191,7 @@ export class ContactService {
         company.whatsapp_connector_server?.type ===
         WhatsAppConnectorType.WHATS_BAILEY
       ) {
-        await this.whatsBailey.sendMessage(company, phone, text, imageUrl)
+        await this.whatsBailey.sendMessage(company, phone, text, imageUrl, undefined, isFromLid)
       }
     }
   }
@@ -242,16 +245,38 @@ export class ContactService {
 
   async getOrCreateContact(
     company: companies,
-    phone: number,
+    phone: number | null,
     senderName: string | null = null,
+    userlid: bigint | null = null,
+    isFromLid: boolean = false,
   ): Promise<Contact | null> {
     try {
+      // If we have phone but no LID, fetch LID from WB API
+      if (!isFromLid && phone != null && userlid == null) {
+        try {
+          userlid = await this.whatsBailey.getLid(
+            company as any,
+            phone.toString(),
+          )
+        } catch {
+          // LID lookup failed, continue without it
+        }
+      }
+
+      // Build where clause: search by LID if isFromLid, otherwise by phone (with optional LID match)
+      const whereClause: any = isFromLid
+        ? { lid: userlid, company_id: company.id, archived_on: null }
+        : userlid != null
+          ? {
+              OR: [
+                { phone: phone, company_id: company.id, archived_on: null },
+                { lid: userlid, company_id: company.id, archived_on: null },
+              ],
+            }
+          : { phone: phone, company_id: company.id, archived_on: null }
+
       const contact = await this.prisma.contacts.findFirst({
-        where: {
-          phone: phone,
-          company_id: company.id,
-          archived_on: null,
-        },
+        where: whereClause,
         include: {
           companies: {
             include: {
@@ -263,11 +288,13 @@ export class ContactService {
 
       if (!contact) {
         this.logger.log('creating company contact')
+        // isFromLid → phone=null, only store LID
         const newContact = await this.prisma.contacts.create({
           data: {
-            phone: phone,
+            phone: isFromLid ? null : phone,
             company_id: company.id,
             whatsapp_profile_name: senderName,
+            lid: userlid,
           },
           include: {
             companies: {
@@ -278,6 +305,29 @@ export class ContactService {
           },
         })
         return newContact as Contact
+      }
+
+      // Merge: fill in missing phone or LID on existing contact
+      const updateData: any = {}
+      if (contact.phone == null && phone != null && !isFromLid) {
+        updateData.phone = phone
+      }
+      if (contact.lid == null && userlid != null) {
+        updateData.lid = userlid
+      }
+      if (Object.keys(updateData).length > 0) {
+        const updated = await this.prisma.contacts.update({
+          where: { id: contact.id },
+          data: updateData,
+          include: {
+            companies: {
+              include: {
+                whatsapp_connector_server: true,
+              },
+            },
+          },
+        })
+        return updated as Contact
       }
 
       return contact as Contact
@@ -351,7 +401,7 @@ export class ContactService {
     }
   }
 
-  async reiniciar(contactId: number) {
+  async resetContact(contactId: number) {
     await this.prisma.$queryRaw`
   UPDATE "contacts"
   SET

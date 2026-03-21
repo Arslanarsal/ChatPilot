@@ -30,9 +30,22 @@ model companies {
   crm_provider                 String?                    @db.VarChar
   whatsapp_connection_status   Boolean?
   assistant_id                 Int?
+  business_details             Json?
   assistant_instructions       assistant_instructions?    @relation(fields: [assistant_id], references: [id])
   whatsapp_connector_server    whatsapp_connector_server? @relation(fields: [whatsapp_connector_server_id], references: [id], map: "poc_clinics_companies_whatsapp_connector_server_id_fkey")
   contacts                     contacts[]
+  users                        users[]
+}
+
+model users {
+  id           Int       @id @default(autoincrement())
+  phone        String    @unique @db.VarChar
+  password     String
+  company_id   Int
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @updatedAt @db.Timestamptz(6)
+  company_name String?   @db.VarChar
+  company      companies @relation(fields: [company_id], references: [id], onDelete: Cascade)
 }
 
 model contacts {
@@ -58,6 +71,7 @@ model contacts {
   is_follow_up_sent        Boolean            @default(false)
   latitude                 Float?
   longitude                Float?
+  lid                      BigInt?
   companies                companies?         @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "poc_clinics_contacts_company_id_fk")
   messages                 messages[]
 

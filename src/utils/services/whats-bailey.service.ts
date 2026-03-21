@@ -28,15 +28,13 @@ export class WhatsBaileyService {
     message: string,
     imageUrl?: string,
     videoUrl?: string,
+    isFromLid: boolean = false,
   ): Promise<boolean> {
-    const typingPayload: any = { phone, companies: company }
-    // this.mockTypingState(typingPayload)
     const url = `${company.whatsapp_connector_server?.url}/api/v1/whatsapp/${company.session_id}/send-message`
-    const chatId = `${phone}@c.us`
 
     const config = {
       headers: { 'Content-Type': 'application/json' },
-      timeout: 50000, // Timeout in milliseconds
+      timeout: 50000,
     }
 
     const requestData: any = imageUrl
@@ -45,11 +43,13 @@ export class WhatsBaileyService {
           text: message,
           url: imageUrl,
           type: 'media',
+          isFromLid,
         }
       : {
           number: `${phone}`,
           text: message,
           type: 'text',
+          isFromLid,
         }
 
     this.logger.log('URL:', url)
@@ -83,6 +83,27 @@ export class WhatsBaileyService {
     }
   }
 
+  async getLid(company: Company, phone: string): Promise<bigint | null> {
+    try {
+      if (!company.whatsapp_connector_server?.url || !company.session_id) {
+        return null
+      }
+      const url = `${company.whatsapp_connector_server.url}/api/v1/whatsapp/${company.session_id}/is-on-whatsapp-with-lid`
+      const response = await axios.post(url, { number: phone }, { timeout: 15000 })
+      if (response.status === 201 && response.data?.length > 0) {
+        const lid: string | null = response.data[0]?.lid ?? null
+        if (lid) {
+          const lidNumber = lid.split('@')[0]
+          return BigInt(lidNumber)
+        }
+      }
+      return null
+    } catch (error) {
+      this.logger.warn('Failed to get LID for phone:', phone)
+      return null
+    }
+  }
+
   async getSessionStatus(company: Company): Promise<{
     success: boolean
     state?: string
@@ -90,7 +111,7 @@ export class WhatsBaileyService {
     error?: string
   }> {
     try {
-      if (company.session_id === null) {
+      if (!company.session_id) {
         this.logger.error('company session_id is not defined', {
           companyId: company.id,
           phone: company.phone,
@@ -149,8 +170,8 @@ export class WhatsBaileyService {
     error?: string
   }> {
     const url = `${company?.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/qrcode/${company.session_id}`
-    const response = await axios.get(url)
 
+    const response = await axios.get(url)
     if (response.status !== 200 || !response.data.success) {
       this.logger.error(
         `Error starting session: ${response.status} ${response.data}`,
@@ -187,14 +208,23 @@ export class WhatsBaileyService {
   async startSession(
     company: Company,
     sever: whatsapp_connector_server,
+    usePairingCode?: boolean,
+    phoneNumber?: string,
   ): Promise<{
     success: boolean
     message?: string
+    pairingCode?: string
     error?: string
   }> {
     const url = `${sever?.url}/api/v1/whatsapp/connect`
 
-    const response = await axios.post(url, { id: `${company.id}` })
+    const body: any = { id: `${company.id}` }
+    if (usePairingCode) {
+      body.usePairingCode = true
+      body.phoneNumber = phoneNumber
+    }
+
+    const response = await axios.post(url, body)
 
     if (response.status !== 201) {
       const errorMessage = `Error starting session: ${response.status} ${response.data}`
@@ -204,6 +234,21 @@ export class WhatsBaileyService {
 
     this.logger.log('Session started successfully:', response.data)
     return response.data
+  }
+
+  async getPairingCode(company: Company): Promise<{
+    success: boolean
+    pairingCode?: string
+    message?: string
+  }> {
+    try {
+      const url = `${company.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/pairingcode/${company.session_id}`
+      const response = await axios.get(url)
+      return response.data
+    } catch (error) {
+      this.logger.error('Error getting pairing code:', error?.message)
+      return { success: false, message: 'Error getting pairing code' }
+    }
   }
 
   async mockTypingState(contact: Contact): Promise<{
@@ -217,8 +262,9 @@ export class WhatsBaileyService {
 
     const url = `${sever?.url}/api/v1/whatsapp/chat/mock-typing`
 
+    const contactNumber = contact.phone ? `${contact.phone}` : `${contact.lid}`
     const body = {
-      number: `${contact.phone}`,
+      number: contactNumber,
       session: company.session_id,
     }
     const response = await axios.post(url, body)
@@ -232,6 +278,30 @@ export class WhatsBaileyService {
     return response.data
   }
 
+  async removeSession(company: Company): Promise<{
+    success: boolean
+    message?: string
+    error?: string
+  }> {
+    try {
+      const url = `${company.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/${company.session_id}/remove`
+      this.logger.log('Removing session, URL:', url)
+      const response = await axios.get(url)
+
+      if (response.status !== 200) {
+        const errorMessage = `Error removing session: ${response.status} ${JSON.stringify(response.data)}`
+        this.logger.error(errorMessage)
+        return { success: false, message: errorMessage, error: errorMessage }
+      }
+
+      return { success: response.data.success, message: response.data.message }
+    } catch (error) {
+      const errorMessage = `Error removing session: ${error?.message || 'Unknown error'}`
+      this.logger.error(errorMessage)
+      return { success: false, message: errorMessage, error: errorMessage }
+    }
+  }
+
   // Set Typing
   async clearTypingState(contact: Contact): Promise<{
     success: boolean
@@ -243,8 +313,9 @@ export class WhatsBaileyService {
       company.whatsapp_connector_server
     const url = `${sever?.url}/api/v1/whatsapp/chat/clear-mock-typing`
 
+    const contactNumber = contact.phone ? `${contact.phone}` : `${contact.lid}`
     const body = {
-      number: `${contact.phone}`,
+      number: contactNumber,
       session: company.session_id,
     }
 

@@ -92,7 +92,7 @@ export class ReplyProcessor extends WorkerHost {
     const isIncludeCompanyReply = messages.some(
       msg => msg.author_type === AUTHOR_TYPE.USER_WHATSAPP,
     )
-    const resetTriggers = ['reiniciar', '/reset']
+    const resetTriggers = ['/reset']
 
     const matchedReset = messages.find(msg =>
       resetTriggers.includes(msg.message.toLowerCase()),

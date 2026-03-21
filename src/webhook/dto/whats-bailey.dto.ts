@@ -109,6 +109,22 @@ export class WhatsBaileyDto {
 
   @ApiProperty({
     type: 'boolean',
+    description: 'Whether the sender is identified by LID instead of phone',
+    required: false,
+    example: false,
+  })
+  isFromLid?: boolean
+
+  @ApiProperty({
+    type: 'string',
+    description: 'Linked ID of the user',
+    required: false,
+    example: '163389363982441',
+  })
+  userlid?: string
+
+  @ApiProperty({
+    type: 'boolean',
     description: 'whether message has location',
     example: true,
   })

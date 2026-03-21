@@ -21,6 +21,8 @@ const appConfig = registerAs(ConfigKey.App, () => ({
   openAiApiKey: process.env.OPENAI_API_KEY,
   redisUrl: process.env.REDIS_URL,
   chatPilotApiKey: process.env.chatPilot_API_KEY,
+  jwtSecret: process.env.JWT_SECRET,
+  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
 }))
 
 const dbConfig = registerAs(ConfigKey.Db, () => ({

@@ -63,4 +63,20 @@ export class ConfigsService {
     }
     return dbUrl
   }
+
+  get jwtSecret(): string {
+    const secret = this.configService.get<string>('App.jwtSecret')
+    if (secret === undefined) {
+      throw new Error('App.jwtSecret is not defined')
+    }
+    return secret
+  }
+
+  get jwtRefreshSecret(): string {
+    const secret = this.configService.get<string>('App.jwtRefreshSecret')
+    if (secret === undefined) {
+      throw new Error('App.jwtRefreshSecret is not defined')
+    }
+    return secret
+  }
 }

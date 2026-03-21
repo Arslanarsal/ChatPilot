@@ -6,6 +6,7 @@ import { CompanyService } from 'src/company/company.service'
 import { AUTHOR_TYPE, ORIGINAL_MESSAGE_TYPE } from 'src/utils/constants/types'
 import OpenAI from 'openai'
 import { WhatsBaileyDto } from './dto/whats-bailey.dto'
+import { WbConnectionUpdateDto } from './dto/wb-connection-update.dto'
 
 @Injectable()
 export class WebhookService {
@@ -24,14 +25,18 @@ export class WebhookService {
     fromMe,
     originalMessageType,
     senderName,
+    userlid,
+    isFromLid,
   }: {
     message: string
-    userPhone: bigint
+    userPhone: bigint | null
     companyPhone: bigint
     photoUrl: string | null
     fromMe: boolean
     originalMessageType: ORIGINAL_MESSAGE_TYPE
     senderName?: string
+    userlid?: bigint | null
+    isFromLid?: boolean
   }) {
     try {
       const company = await this.companyService.findByPhone(
@@ -48,8 +53,10 @@ export class WebhookService {
 
       const contact = await this.contactService.getOrCreateContact(
         company,
-        Number(userPhone),
+        userPhone != null ? Number(userPhone) : null,
         !fromMe ? senderName : null,
+        userlid ?? null,
+        isFromLid ?? false,
       )
       if (!contact) {
         return
@@ -105,7 +112,7 @@ export class WebhookService {
           await this.replyService.addReplyTask({
             clientId: contact.id,
             message,
-            contactPhone: userPhone,
+            contactPhone: userPhone ?? userlid ?? BigInt(0),
             companyId: company.id,
             companyPhone,
             fromMe,
@@ -138,6 +145,27 @@ export class WebhookService {
     }
   }
 
+  async updateConnectionStatus(statusDto: WbConnectionUpdateDto): Promise<string> {
+    this.logger.log('Connection status webhook received', JSON.stringify(statusDto))
+
+    const company = await this.companyService.findBySessionId(statusDto.sessionId)
+    if (!company) {
+      this.logger.warn('Company not found for session', { sessionId: statusDto.sessionId })
+      return 'company not found'
+    }
+
+
+    await this.companyService.updateCompany(company.id, {
+      whatsapp_connection_status: statusDto.status,
+    } as any)
+
+    this.logger.log(
+      `Updated whatsapp_connection_status for company ${company.id} to ${statusDto.status} - ${statusDto.message}`,
+    )
+
+    return 'success'
+  }
+
   async whatsBaileyWebhook(baileyDto: WhatsBaileyDto): Promise<string> {
     this.logger.verbose('Bailey webhook received', { baileyDto })
     this.logger.log('baileyDto', baileyDto)
@@ -165,19 +193,24 @@ export class WebhookService {
       return 'Phone number not numeric'
     }
 
-    if (!/^\d+$/.test(baileyDto.userPhone)) {
+    const isFromLid = baileyDto.isFromLid ?? false
+
+    // When isFromLid, phone is null - contact identified by LID only
+    if (!isFromLid && !/^\d+$/.test(baileyDto.userPhone)) {
       this.logger.error('userPhone number not numeric' + baileyDto.userPhone)
       return 'Phone number not numeric'
     }
 
     const messageInfo = {
       message: baileyDto.text,
-      userPhone: BigInt(baileyDto.userPhone),
+      userPhone: isFromLid ? null : BigInt(baileyDto.userPhone),
       companyPhone: BigInt(baileyDto.companyPhone),
       photoUrl: null,
       fromMe: baileyDto.fromMe,
       originalMessageType: baileyDto['originalMessageType'],
-      senderName: baileyDto.fromMe ? '' : 'PUSH NAME',
+      senderName: baileyDto.fromMe ? '' : (baileyDto['senderName'] || 'PUSH NAME'),
+      userlid: baileyDto.userlid ? BigInt(baileyDto.userlid) : null,
+      isFromLid,
     }
 
     if (!messageInfo.message) {
