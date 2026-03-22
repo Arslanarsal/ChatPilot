@@ -11,6 +11,9 @@ import { AuthService } from './auth.service'
 import { SignupDto } from './dto/signup.dto'
 import { LoginDto } from './dto/login.dto'
 import { RefreshTokenDto } from './dto/refresh-token.dto'
+import { ForgotPasswordDto } from './dto/forgot-password.dto'
+import { VerifyOtpDto } from './dto/verify-otp.dto'
+import { ResetPasswordDto } from './dto/reset-password.dto'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
 
 @ApiTags('Auth')
@@ -42,5 +45,23 @@ export class AuthController {
   @Get('me')
   getMe(@Request() req: any) {
     return this.authService.getMe(req.user.userId)
+  }
+
+  @ApiOperation({ summary: 'Send OTP to phone for password reset' })
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto)
+  }
+
+  @ApiOperation({ summary: 'Verify OTP code' })
+  @Post('verify-otp')
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto)
+  }
+
+  @ApiOperation({ summary: 'Reset password with verified OTP' })
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto)
   }
 }

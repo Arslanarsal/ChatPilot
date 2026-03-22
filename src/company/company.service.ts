@@ -240,6 +240,7 @@ export class CompanyService {
   async userOwnsCompany(userId: number, companyId: number): Promise<boolean> {
     const user = await this.prisma.users.findFirst({
       where: { id: userId, company_id: companyId },
+      select: { id: true },
     })
     return !!user
   }
@@ -260,7 +261,7 @@ export class CompanyService {
     if (!company) throw new UnprocessableEntityException('Company not found')
 
     const details = company.business_details as Record<string, any> | null
-    if (!details) {
+    if (!details?.description) {
       throw new UnprocessableEntityException(
         'Please save business details first',
       )
@@ -270,15 +271,10 @@ export class CompanyService {
 
     const { text: generatedPrompt } = await generateText({
       model: openai('gpt-4o-mini'),
-      prompt: `You are an expert at creating WhatsApp business chatbot system prompts. Based on the following business details, generate a comprehensive system prompt for a WhatsApp AI assistant. The prompt should define the bot's personality, knowledge, and behavior.
+      prompt: `You are an expert at creating WhatsApp business chatbot system prompts. Based on the following business description, generate a comprehensive system prompt for a WhatsApp AI assistant. The prompt should define the bot's personality, knowledge, and behavior.
 
-Business Details:
-- Company Name: ${company.name}
-- Description: ${details.description || 'N/A'}
-- Industry: ${details.industry || 'N/A'}
-- Services: ${details.services || 'N/A'}
-- Business Hours: ${details.hours || 'N/A'}
-- Tone: ${details.tone || 'professional and friendly'}
+Business Description:
+${details.description}
 
 Generate ONLY the system prompt text, no explanations.`,
     })
@@ -290,7 +286,7 @@ Generate ONLY the system prompt text, no explanations.`,
       })
     }
 
-    return { prompt: generatedPrompt }
+    return { success: true }
   }
 
   async getDashboardStats(companyId: number) {

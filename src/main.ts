@@ -7,6 +7,7 @@ import { ValidationPipe } from '@nestjs/common'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 import { LoggerService } from './common/logging/logger.service'
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter'
 import { json, urlencoded } from 'express'
 ;(BigInt.prototype as any).toJSON = function () {
   const int = Number.parseInt(this.toString())
@@ -40,6 +41,7 @@ async function bootstrap() {
     origin: process.env.FRONTEND_URL || 'http://localhost:3001',
     credentials: true,
   })
+  app.useGlobalFilters(new AllExceptionsFilter())
   app.useGlobalPipes(new ValidationPipe())
   await app.listen(process.env.PORT ?? 3000)
 }

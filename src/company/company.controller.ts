@@ -270,6 +270,22 @@ export class CompanyController {
     return this.companyService.getContacts(id, +page, +limit, search)
   }
 
+  @ApiOperation({ summary: 'Toggle bot activation for a contact' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/contacts/:contactId/bot-toggle')
+  async toggleContactBot(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('contactId', ParseIntPipe) contactId: number,
+    @Body() body: { is_bot_activated: boolean },
+  ) {
+    await this.verifyOwnership(req.user.userId, id)
+    return this.contactService.updateContact(contactId, {
+      is_bot_activated: body.is_bot_activated,
+    })
+  }
+
   @ApiOperation({ summary: 'Get chat history for a contact' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
