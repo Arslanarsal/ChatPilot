@@ -27,6 +27,7 @@ export class WebhookService {
     senderName,
     userlid,
     isFromLid,
+    wbId,
   }: {
     message: string
     userPhone: bigint | null
@@ -37,6 +38,7 @@ export class WebhookService {
     senderName?: string
     userlid?: bigint | null
     isFromLid?: boolean
+    wbId?: string | null
   }) {
     try {
       const company = await this.companyService.findByPhone(
@@ -81,6 +83,7 @@ export class WebhookService {
             null,
             AUTHOR_TYPE.USER_WHATSAPP,
             originalMessageType,
+            wbId ?? null,
           ),
           this.contactService.updateContact(contact.id, {
             is_replies_activated: false,
@@ -100,6 +103,7 @@ export class WebhookService {
             contact,
             message,
             originalMessageType,
+            wbId ?? null,
           ),
         ])
         const shouldProcessMessage =
@@ -211,6 +215,7 @@ export class WebhookService {
       senderName: baileyDto.fromMe ? '' : (baileyDto['senderName'] || 'PUSH NAME'),
       userlid: baileyDto.userlid ? BigInt(baileyDto.userlid) : null,
       isFromLid,
+      wbId: baileyDto.id ?? null,
     }
 
     if (!messageInfo.message) {

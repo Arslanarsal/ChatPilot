@@ -91,6 +91,7 @@ model messages {
   author_type           String    @default("bot") @db.VarChar(50)
   processed             Boolean   @default(false)
   original_message_type String?   @default("text") @db.VarChar(50)
+  wb_id                 String?   @db.VarChar
   contacts              contacts  @relation(fields: [contact_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 

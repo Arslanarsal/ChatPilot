@@ -144,16 +144,17 @@ export class ContactService {
     const originalMessageType = mediaUrl
       ? ORIGINAL_MESSAGE_TYPE.IMAGE
       : ORIGINAL_MESSAGE_TYPE.TEXT
+    const isFromLid = !self.phone && !!self.lid
+    const sendNumber = self.phone ? Number(self.phone) : Number(self.lid)
+    const wbId = await this._sendMessage(self, sendNumber, text, mediaUrl, isFromLid)
     await this.saveOutgoingMessage(
       self,
       text,
       mediaUrl,
       authorType,
       originalMessageType,
+      wbId,
     )
-    const isFromLid = !self.phone && !!self.lid
-    const sendNumber = self.phone ? Number(self.phone) : Number(self.lid)
-    await this._sendMessage(self, sendNumber, text, mediaUrl, isFromLid)
   }
 
   async saveOutgoingMessage(
@@ -164,6 +165,7 @@ export class ContactService {
     imageUrl: string | null = null,
     authorType: AUTHOR_TYPE = AUTHOR_TYPE.BOT,
     originalMessageType: ORIGINAL_MESSAGE_TYPE = ORIGINAL_MESSAGE_TYPE.TEXT,
+    wbId: string | null = null,
   ): Promise<void> {
     await this.prisma.messages.create({
       data: {
@@ -174,6 +176,7 @@ export class ContactService {
         author_type: authorType,
         processed: authorType === AUTHOR_TYPE.BOT ? true : false,
         original_message_type: originalMessageType,
+        wb_id: wbId,
       },
     })
   }
@@ -184,7 +187,7 @@ export class ContactService {
     text: string,
     imageUrl?: string,
     isFromLid: boolean = false,
-  ): Promise<void> {
+  ): Promise<string | null> {
     const company: Company = self.companies
 
     if (company) {
@@ -192,9 +195,10 @@ export class ContactService {
         company.whatsapp_connector_server?.type ===
         WhatsAppConnectorType.WHATS_BAILEY
       ) {
-        await this.whatsBailey.sendMessage(company, phone, text, imageUrl, undefined, isFromLid)
+        return await this.whatsBailey.sendMessage(company, phone, text, imageUrl, undefined, isFromLid)
       }
     }
+    return null
   }
 
   async getAiChatHistory(
@@ -231,6 +235,7 @@ export class ContactService {
     self: contacts,
     text: string,
     originalMessageType: ORIGINAL_MESSAGE_TYPE = ORIGINAL_MESSAGE_TYPE.TEXT,
+    wbId: string | null = null,
   ): Promise<messages> {
     const message = await this.prisma.messages.create({
       data: {
@@ -239,6 +244,7 @@ export class ContactService {
         message: text,
         author_type: AUTHOR_TYPE.HUMAN,
         original_message_type: originalMessageType,
+        wb_id: wbId,
       },
     })
     return message

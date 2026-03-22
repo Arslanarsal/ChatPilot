@@ -29,7 +29,7 @@ export class WhatsBaileyService {
     imageUrl?: string,
     videoUrl?: string,
     isFromLid: boolean = false,
-  ): Promise<boolean> {
+  ): Promise<string | null> {
     const url = `${company.whatsapp_connector_server?.url}/api/v1/whatsapp/${company.session_id}/send-message`
 
     const config = {
@@ -57,15 +57,13 @@ export class WhatsBaileyService {
 
     try {
       const response = await axios.post(url, requestData, config)
-      // this.clearTypingState(typingPayload)
       if (response.status !== 201) {
         const errorMessage = `Error sending message: ${response.status} ${JSON.stringify(response.data)} `
-        // this.sentryService.instance().captureException(new Error(errorMessage));
         this.logger.error(errorMessage)
-        return false
+        return null
       }
 
-      return true
+      return response.data?.result?.wb_id ?? null
     } catch (error) {
       let errorMessage = 'Unknown error occurred'
 
@@ -77,9 +75,8 @@ export class WhatsBaileyService {
         errorMessage = `Error: ${error.message}`
       }
 
-      //   this.sentryService.instance().captureException(new Error(errorMessage));
       this.logger.error('Error sending WhatsApp message:', errorMessage)
-      return false
+      return null
     }
   }
 
