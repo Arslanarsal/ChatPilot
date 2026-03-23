@@ -203,6 +203,31 @@ export class CompanyController {
     return await this.companyService.removeSession(id)
   }
 
+  @ApiOperation({ summary: 'Send OTP for company deletion' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/send-delete-otp')
+  async sendDeleteOtp(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    await this.verifyOwnership(req.user.userId, id)
+    return this.companyService.sendDeleteOtp(id)
+  }
+
+  @ApiOperation({ summary: 'Delete company and all related data (requires OTP)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  async deleteCompany(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { otp: string },
+  ) {
+    await this.verifyOwnership(req.user.userId, id)
+    return this.companyService.deleteCompany(id, body.otp)
+  }
+
   @ApiOperation({ summary: 'Save business details' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)

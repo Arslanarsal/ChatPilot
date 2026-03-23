@@ -136,12 +136,12 @@ export class WhatsBaileyService {
           error: 'error during WhatsBailey status api call',
         }
       }
+      const isActive = response.data.status.isActive === true
+      const state = isActive ? 'CONNECTED' : 'DISCONNECTED'
       return {
-        success: response.data.status.status,
-        state: response.data.status.status,
-        message: response.data.status?.message
-          ? response.data.status?.message
-          : `Session ${response.data.status.status}`,
+        success: isActive,
+        state,
+        message: response.data.status?.message || `Session ${state}`,
       }
     } catch (e) {
       this.logger.error('error while fetching WhatsBailey session status', {

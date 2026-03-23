@@ -60,17 +60,18 @@ export class CompanyService {
   }
 
   async getAvailableServer(): Promise<whatsapp_connector_server | null> {
-    const server = await this.prisma.$queryRaw`
-     SELECT s.*
-     FROM  public.whatsapp_connector_server as s
-     LEFT JOIN companies c ON s.id = c.whatsapp_connector_server_id
-     WHERE s.type = 'whats_bailey'
-     GROUP BY s.id
-     HAVING COUNT(c.id) < 4
-     ORDER BY COUNT(c.id) ASC
-     LIMIT 1;
-    `
-    return server ? server[0] : null
+    // Prefer localhost server, fallback to any available
+    // const server = await this.prisma.whatsapp_connector_server.findFirst({
+    //   where: {
+    //     type: 'whats_bailey',
+    //     url: { contains: 'localhost' },
+    //   },
+    // })
+    // if (server) return server
+
+    return this.prisma.whatsapp_connector_server.findFirst({
+      where: { type: 'whats_bailey' },
+    })
   }
 
   async createSession(companyId: number, usePairingCode?: boolean, phoneNumber?: string) {
@@ -81,6 +82,7 @@ export class CompanyService {
       throw new UnprocessableEntityException('Phone number is required when using pairing code')
     }
 
+    // If session already exists, check if truly active
     if (
       company.whatsapp_connector_server?.type ===
         WhatsAppConnectorType.WHATS_BAILEY &&
@@ -91,6 +93,14 @@ export class CompanyService {
       if (sessionStatus.success) {
         throw new UnprocessableEntityException(sessionStatus.message)
       }
+      // Remove stale session so fresh QR is generated
+      try {
+        await this.whatsBaileyService.removeSession(company)
+      } catch { /* ignore */ }
+      await this.updateCompany(company.id, {
+        session_id: null,
+        whatsapp_connection_status: false,
+      } as any)
     }
 
     const server = await this.getAvailableServer()
@@ -143,13 +153,13 @@ export class CompanyService {
     const company = await this.findById(companyId)
     if (!company) throw new UnprocessableEntityException('company not found')
     if (
+      !company.session_id ||
       company.whatsapp_connector_server?.type !==
         WhatsAppConnectorType.WHATS_BAILEY ||
-      company.whatsapp_connector_server?.url === null
+      !company.whatsapp_connector_server?.url
     ) {
-      throw new UnprocessableEntityException(
-        `provider isn't WhatsApp Bailey or server url missing`,
-      )
+      res.setHeader('Content-Type', 'application/json')
+      return res.send({ statusCode: 200, data: null, message: 'No active session. Please create a session first.' })
     }
     return await this.whatsBaileyService.getSessionQrCode(res, company)
   }
@@ -157,13 +167,12 @@ export class CompanyService {
     const company = await this.findById(companyId)
     if (!company) throw new UnprocessableEntityException('company not found')
     if (
+      !company.session_id ||
       company.whatsapp_connector_server?.type !==
         WhatsAppConnectorType.WHATS_BAILEY ||
-      company.whatsapp_connector_server?.url === null
+      !company.whatsapp_connector_server?.url
     ) {
-      throw new UnprocessableEntityException(
-        `provider isn't WhatsApp Bailey or server url missing`,
-      )
+      return { success: false, state: 'DISCONNECTED', message: 'No active session' }
     }
     return await this.whatsBaileyService.getSessionStatus(company)
   }
@@ -213,16 +222,12 @@ export class CompanyService {
     const company = await this.findById(companyId)
     if (!company) throw new UnprocessableEntityException('company not found')
     if (
+      !company.session_id ||
       company.whatsapp_connector_server?.type !==
         WhatsAppConnectorType.WHATS_BAILEY ||
-      company.whatsapp_connector_server?.url === null
+      !company.whatsapp_connector_server?.url
     ) {
-      throw new UnprocessableEntityException(
-        `provider isn't WhatsApp Bailey or server url missing`,
-      )
-    }
-    if (!company.session_id) {
-      throw new UnprocessableEntityException('no active session found')
+      return { success: true, message: 'No active session to remove' }
     }
 
     const result = await this.whatsBaileyService.removeSession(company)
@@ -283,6 +288,14 @@ Generate ONLY the system prompt text, no explanations.`,
       await this.prisma.assistant_instructions.update({
         where: { id: company.assistant_id },
         data: { system_prompt: generatedPrompt },
+      })
+    } else {
+      const instructions = await this.prisma.assistant_instructions.create({
+        data: { system_prompt: generatedPrompt },
+      })
+      await this.prisma.companies.update({
+        where: { id: companyId },
+        data: { assistant_id: instructions.id },
       })
     }
 
@@ -388,5 +401,109 @@ Generate ONLY the system prompt text, no explanations.`,
     })
 
     return { contact, messages }
+  }
+
+  async sendDeleteOtp(companyId: number) {
+    const company = await this.findById(companyId)
+    if (!company) throw new UnprocessableEntityException('Company not found')
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
+
+    const user = await this.prisma.users.findFirst({
+      where: { company_id: companyId },
+    })
+    if (!user) throw new UnprocessableEntityException('No user found for this company')
+
+    await this.prisma.users.update({
+      where: { id: user.id },
+      data: { otp_code: otp, otp_expires_at: expiresAt },
+    })
+
+    const otpCompany = await this.findById(1)
+    if (otpCompany) {
+      await this.whatsBaileyService.sendMessage(
+        otpCompany,
+        Number(user.phone),
+        `Your ChatPilot delete verification code is: *${otp}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
+      )
+    } else {
+      throw new UnprocessableEntityException('OTP service unavailable')
+    }
+
+    return { success: true, message: 'OTP sent to your WhatsApp' }
+  }
+
+  async deleteCompany(companyId: number, otp: string) {
+    const company = await this.findById(companyId)
+    if (!company) throw new UnprocessableEntityException('Company not found')
+
+    // Verify OTP
+    const user = await this.prisma.users.findFirst({
+      where: { company_id: companyId },
+      select: { id: true, otp_code: true, otp_expires_at: true },
+    })
+    if (!user) throw new UnprocessableEntityException('No user found for this company')
+
+    if (
+      !user.otp_code ||
+      !user.otp_expires_at ||
+      user.otp_code !== otp ||
+      user.otp_expires_at < new Date()
+    ) {
+      throw new UnprocessableEntityException('Invalid or expired OTP')
+    }
+
+    // Clear OTP
+    await this.prisma.users.update({
+      where: { id: user.id },
+      data: { otp_code: null, otp_expires_at: null },
+    })
+
+    if (company.session_id && company.whatsapp_connector_server) {
+      try {
+        await this.whatsBaileyService.removeSession(company)
+      } catch (e) {
+        this.logger.warn('Failed to remove WhatsApp session during company deletion', e?.message)
+      }
+    }
+
+    const assistantId = company.assistant_id
+
+    await this.prisma.$transaction(async (tx) => {
+      const contacts = await tx.contacts.findMany({
+        where: { company_id: companyId },
+        select: { id: true },
+      })
+      const contactIds = contacts.map(c => c.id)
+
+      if (contactIds.length > 0) {
+        await tx.messages.deleteMany({
+          where: { contact_id: { in: contactIds } },
+        })
+      }
+
+      await tx.contacts.deleteMany({
+        where: { company_id: companyId },
+      })
+
+      await tx.companies.delete({
+        where: { id: companyId },
+      })
+
+      if (assistantId) {
+        const otherCompany = await tx.companies.findFirst({
+          where: { assistant_id: assistantId },
+          select: { id: true },
+        })
+        if (!otherCompany) {
+          await tx.assistant_instructions.delete({
+            where: { id: assistantId },
+          })
+        }
+      }
+    })
+
+    return { success: true, message: 'Company and all related data deleted successfully' }
   }
 }
