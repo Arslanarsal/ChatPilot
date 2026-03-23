@@ -6,10 +6,6 @@ export class CreateCompanyDto {
   @IsString()
   name: string
 
-  @ApiProperty({ example: 'asst_Durr9hR8ZapSnLFzwh1cCFtp' })
-  @IsString()
-  openai_assistant_id: string
-
   @ApiProperty({ example: 'abc123' })
   @IsString()
   url_id: string
