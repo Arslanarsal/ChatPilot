@@ -44,7 +44,6 @@ export class AuthService {
         data: {
           name: dto.company_name,
           phone: BigInt(dto.phone),
-          openai_assistant_id: '',
           assistant_id: instructions.id,
         },
       })
