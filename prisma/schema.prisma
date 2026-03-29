@@ -18,7 +18,6 @@ model companies {
   updated_at                 DateTime?               @db.Timestamptz(6)
   is_bot_activated           Boolean?                @default(true)
   session_id                 String?                 @unique(map: "poc_clinics_companies_wapi_id_key")
-  crm_provider               String?                 @db.VarChar
   whatsapp_connection_status Boolean?
   assistant_id               Int?
   business_details           Json?

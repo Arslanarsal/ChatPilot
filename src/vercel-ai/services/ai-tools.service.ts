@@ -9,7 +9,7 @@ import {
   Contact,
 } from 'src/utils/constants/types'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { AppointmentService } from 'src/utils/services/appointment.service'
+import { CalComService } from 'src/utils/services/calcom.service'
 
 @Injectable()
 export class AiToolsService {
@@ -20,7 +20,7 @@ export class AiToolsService {
     private readonly contactService: ContactService,
     private readonly datesHelperService: DatesHelper,
     private readonly prisma: PrismaService,
-    private readonly appointmentService: AppointmentService,
+    private readonly calComService: CalComService,
   ) {}
 
   getContactTools(contact: Contact, excludeTools: AiSdkToolsNames[] = []) {
@@ -338,7 +338,7 @@ export class AiToolsService {
             })
 
             const result =
-              await this.appointmentService.getAvailableAppointments(
+              await this.calComService.getAvailableAppointments(
                 company,
                 startDate,
                 endDate,
@@ -393,7 +393,7 @@ export class AiToolsService {
               },
             })
 
-            const result = await this.appointmentService.bookAppointment(
+            const result = await this.calComService.bookAppointment(
               company,
               date,
               name,
@@ -452,7 +452,7 @@ export class AiToolsService {
               return 'No existing appointment found to cancel.'
             }
 
-            const result = await this.appointmentService.cancelAppointment(
+            const result = await this.calComService.cancelAppointment(
               company,
               contact,
             )

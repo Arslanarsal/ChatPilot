@@ -1,7 +1,6 @@
 import { forwardRef, Global, Module } from '@nestjs/common'
 import { DatesHelper } from './services/dates.service'
 import { CalComService } from './services/calcom.service'
-import { AppointmentService } from './services/appointment.service'
 import { CompanyModule } from 'src/company/company.module'
 import { WhatsAppFormatter } from './services/whatsapp-formatter.helper'
 import { WhatsBaileyService } from './services/whats-bailey.service'
@@ -15,7 +14,6 @@ import { SupabaseStorageService } from './services/supabase-storage.service'
   providers: [
     DatesHelper,
     CalComService,
-    AppointmentService,
     WhatsAppFormatter,
     WhatsBaileyService,
     PromptHelper,
@@ -23,7 +21,7 @@ import { SupabaseStorageService } from './services/supabase-storage.service'
   ],
   exports: [
     DatesHelper,
-    AppointmentService,
+    CalComService,
     WhatsAppFormatter,
     WhatsBaileyService,
     PromptHelper,

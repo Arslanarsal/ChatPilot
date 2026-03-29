@@ -2,11 +2,14 @@ import { Injectable, Logger } from '@nestjs/common'
 import axios, { AxiosRequestConfig } from 'axios'
 import { companies } from '@prisma/client'
 import { Contact } from '../constants/types'
+import { DatesHelper } from './dates.service'
 
 @Injectable()
 export class CalComService {
   private readonly logger = new Logger(CalComService.name)
   private readonly baseUrl = 'https://api.cal.com/v2'
+
+  constructor(private readonly datesHelper: DatesHelper) {}
 
   async getAvailableAppointments(
     company: companies,
@@ -33,7 +36,15 @@ export class CalComService {
 
     try {
       const response = await axios.get(url, config)
-      return response.data
+      const slots = response.data?.data?.slots || {}
+      const formatted = {}
+      for (const [date, times] of Object.entries(slots)) {
+        formatted[date] = (times as any[]).map((time: any) => {
+          const localTime = this.datesHelper.convertFromZulu(time.time)
+          return { time: localTime }
+        })
+      }
+      return formatted
     } catch (error: any) {
       this.logger.error('Failed to fetch available slots', error?.message)
       return 'Failed to fetch available slots'
@@ -62,7 +73,7 @@ export class CalComService {
     }
 
     const payload = {
-      start: date,
+      start: this.datesHelper.addHours(date, 3),
       eventTypeId: company.cal_event_type_id,
       attendee: {
         name,
