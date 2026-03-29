@@ -23,6 +23,7 @@ const appConfig = registerAs(ConfigKey.App, () => ({
   chatPilotApiKey: process.env.chatPilot_API_KEY,
   jwtSecret: process.env.JWT_SECRET,
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
+  wbBaseUrl: process.env.WB_BASE_URL,
 }))
 
 const dbConfig = registerAs(ConfigKey.Db, () => ({

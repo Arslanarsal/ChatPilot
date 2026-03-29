@@ -79,4 +79,12 @@ export class ConfigsService {
     }
     return secret
   }
+
+  get wbBaseUrl(): string {
+    const url = this.configService.get<string>('App.wbBaseUrl')
+    if (url === undefined) {
+      throw new Error('App.wbBaseUrl (WB_BASE_URL) is not defined')
+    }
+    return url
+  }
 }

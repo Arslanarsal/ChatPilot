@@ -6,7 +6,6 @@ import {
   contacts,
   messages,
   Prisma,
-  whatsapp_connector_server,
 } from '@prisma/client'
 import {
   AUTHOR_TYPE,
@@ -16,7 +15,6 @@ import {
   ORIGINAL_MESSAGE_TYPE,
 } from 'src/utils/constants/types'
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
-import { WhatsAppConnectorType } from 'src/whatsapp-connector/dto/create-whatsapp-connector.dto'
 
 @Injectable()
 export class ContactService {
@@ -32,11 +30,7 @@ export class ContactService {
         ...createContactDto,
       },
       include: {
-        companies: {
-          include: {
-            whatsapp_connector_server: true,
-          },
-        },
+        companies: true,
       },
     })
   }
@@ -45,11 +39,7 @@ export class ContactService {
     return (await this.prisma.contacts.findUnique({
       where: { id },
       include: {
-        companies: {
-          include: {
-            whatsapp_connector_server: true,
-          },
-        },
+        companies: true,
       },
     })) as Contact
   }
@@ -61,11 +51,7 @@ export class ContactService {
         ...updateContactDto,
       },
       include: {
-        companies: {
-          include: {
-            whatsapp_connector_server: true,
-          },
-        },
+        companies: true,
       },
     })
   }
@@ -100,12 +86,7 @@ export class ContactService {
 
   async getUnProcessedMessages(contactId: number): Promise<
     | (contacts & {
-        companies:
-          | (companies & {
-              whatsapp_connector_server: whatsapp_connector_server
-            })
-          | companies
-          | null
+        companies: companies | null
         messages: messages[]
       })
     | null
@@ -113,11 +94,7 @@ export class ContactService {
     return await this.prisma.contacts.findFirst({
       where: { id: contactId },
       include: {
-        companies: {
-          include: {
-            whatsapp_connector_server: true,
-          },
-        },
+        companies: true,
         messages: {
           where: {
             processed: false,
@@ -191,12 +168,7 @@ export class ContactService {
     const company: Company = self.companies
 
     if (company) {
-      if (
-        company.whatsapp_connector_server?.type ===
-        WhatsAppConnectorType.WHATS_BAILEY
-      ) {
-        return await this.whatsBailey.sendMessage(company, phone, text, imageUrl, undefined, isFromLid)
-      }
+      return await this.whatsBailey.sendMessage(company, phone, text, imageUrl, undefined, isFromLid)
     }
     return null
   }
@@ -285,11 +257,7 @@ export class ContactService {
       const contact = await this.prisma.contacts.findFirst({
         where: whereClause,
         include: {
-          companies: {
-            include: {
-              whatsapp_connector_server: true,
-            },
-          },
+          companies: true,
         },
       })
 
@@ -304,11 +272,7 @@ export class ContactService {
             lid: userlid,
           },
           include: {
-            companies: {
-              include: {
-                whatsapp_connector_server: true,
-              },
-            },
+            companies: true,
           },
         })
         return newContact as Contact
@@ -327,11 +291,7 @@ export class ContactService {
           where: { id: contact.id },
           data: updateData,
           include: {
-            companies: {
-              include: {
-                whatsapp_connector_server: true,
-              },
-            },
+            companies: true,
           },
         })
         return updated as Contact
@@ -372,12 +332,7 @@ export class ContactService {
       const company: Company = self.companies
 
       if (company) {
-        if (
-          company.whatsapp_connector_server?.type ===
-          WhatsAppConnectorType.WHATS_BAILEY
-        ) {
-          await this.whatsBailey.mockTypingState(self)
-        }
+        await this.whatsBailey.mockTypingState(self)
       }
     } catch (e) {
       this.logger.error(`error while mocking typing status: `, {
@@ -392,12 +347,7 @@ export class ContactService {
     const company: Company = self.companies
     try {
       if (company) {
-        if (
-          company.whatsapp_connector_server?.type ===
-          WhatsAppConnectorType.WHATS_BAILEY
-        ) {
-          await this.whatsBailey.clearTypingState(self)
-        }
+        await this.whatsBailey.clearTypingState(self)
       }
     } catch (e) {
       this.logger.error(`error while clearing typing status: `, {

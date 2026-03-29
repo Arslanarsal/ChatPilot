@@ -7,9 +7,8 @@ import {
 } from '@nestjs/common'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { CreateCompanyDto } from './dto/create-company.dto'
-import { companies, whatsapp_connector_server } from '@prisma/client'
+import { companies } from '@prisma/client'
 import { Company } from 'src/utils/constants/types'
-import { WhatsAppConnectorType } from 'src/whatsapp-connector/dto/create-whatsapp-connector.dto'
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
 import { SupabaseStorageService } from 'src/utils/services/supabase-storage.service'
 import { generateText } from 'ai'
@@ -29,27 +28,18 @@ export class CompanyService {
   async findByPhone(targetPhone: number) {
     return await this.prisma.companies.findFirst({
       where: { phone: Number(targetPhone) },
-      include: {
-        whatsapp_connector_server: true,
-      },
     })
   }
 
   async findBySessionId(sessionId: string) {
     return await this.prisma.companies.findFirst({
       where: { session_id: sessionId },
-      include: {
-        whatsapp_connector_server: true,
-      },
     })
   }
 
   async findById(id: number): Promise<Company | null> {
     return (await this.prisma.companies.findFirst({
       where: { id: Number(id) },
-      include: {
-        whatsapp_connector_server: true,
-      },
     })) as Company
   }
 
@@ -58,21 +48,6 @@ export class CompanyService {
       data: {
         ...createCompanyDto,
       },
-    })
-  }
-
-  async getAvailableServer(): Promise<whatsapp_connector_server | null> {
-    // Prefer localhost server, fallback to any available
-    // const server = await this.prisma.whatsapp_connector_server.findFirst({
-    //   where: {
-    //     type: 'whats_bailey',
-    //     url: { contains: 'localhost' },
-    //   },
-    // })
-    // if (server) return server
-
-    return this.prisma.whatsapp_connector_server.findFirst({
-      where: { type: 'whats_bailey' },
     })
   }
 
@@ -85,11 +60,7 @@ export class CompanyService {
     }
 
     // If session already exists, check if truly active
-    if (
-      company.whatsapp_connector_server?.type ===
-        WhatsAppConnectorType.WHATS_BAILEY &&
-      company.session_id
-    ) {
+    if (company.session_id) {
       const sessionStatus =
         await this.whatsBaileyService.getSessionStatus(company)
       if (sessionStatus.success) {
@@ -105,17 +76,13 @@ export class CompanyService {
       } as any)
     }
 
-    const server = await this.getAvailableServer()
-    if (!server) throw new UnprocessableEntityException('no server available')
-
-    const session = await this.whatsBaileyService.startSession(company, server, usePairingCode, phoneNumber)
+    const session = await this.whatsBaileyService.startSession(company, usePairingCode, phoneNumber)
     this.logger.log(`${session.success}`, 'company service')
     if (!session.success) {
       throw new UnprocessableEntityException(session.message)
     }
 
     await this.updateCompany(company.id, {
-      whatsapp_connector_server_id: server.id,
       session_id: companyId.toString(),
     })
 
@@ -145,21 +112,12 @@ export class CompanyService {
     return (await this.prisma.companies.update({
       where: { id: companyId },
       data: updateCompanyDto as any,
-
-      include: {
-        whatsapp_connector_server: true,
-      },
     })) as Company
   }
   async getSessionQrCode(res, companyId: number) {
     const company = await this.findById(companyId)
     if (!company) throw new UnprocessableEntityException('company not found')
-    if (
-      !company.session_id ||
-      company.whatsapp_connector_server?.type !==
-        WhatsAppConnectorType.WHATS_BAILEY ||
-      !company.whatsapp_connector_server?.url
-    ) {
+    if (!company.session_id) {
       res.setHeader('Content-Type', 'application/json')
       return res.send({ statusCode: 200, data: null, message: 'No active session. Please create a session first.' })
     }
@@ -168,12 +126,7 @@ export class CompanyService {
   async getSessionStatus(companyId: number) {
     const company = await this.findById(companyId)
     if (!company) throw new UnprocessableEntityException('company not found')
-    if (
-      !company.session_id ||
-      company.whatsapp_connector_server?.type !==
-        WhatsAppConnectorType.WHATS_BAILEY ||
-      !company.whatsapp_connector_server?.url
-    ) {
+    if (!company.session_id) {
       return { success: false, state: 'DISCONNECTED', message: 'No active session' }
     }
     return await this.whatsBaileyService.getSessionStatus(company)
@@ -182,12 +135,7 @@ export class CompanyService {
   async syncAllSessionStatus() {
     const companies = await this.prisma.companies.findMany({
       where: {
-        whatsapp_connector_server: {
-          type: WhatsAppConnectorType.WHATS_BAILEY,
-        },
-      },
-      include: {
-        whatsapp_connector_server: true,
+        session_id: { not: null },
       },
       orderBy: {
         id: 'asc',
@@ -215,20 +163,13 @@ export class CompanyService {
       whatsapp_connection_status: company.whatsapp_connection_status,
       session_id: company.session_id,
       phone: company.phone,
-      server_url: company.whatsapp_connector_server?.url,
-      whatsapp_provider: company.whatsapp_connector_server?.type,
     }))
   }
 
   async removeSession(companyId: number) {
     const company = await this.findById(companyId)
     if (!company) throw new UnprocessableEntityException('company not found')
-    if (
-      !company.session_id ||
-      company.whatsapp_connector_server?.type !==
-        WhatsAppConnectorType.WHATS_BAILEY ||
-      !company.whatsapp_connector_server?.url
-    ) {
+    if (!company.session_id) {
       return { success: true, message: 'No active session to remove' }
     }
 
@@ -462,7 +403,7 @@ Generate ONLY the system prompt text, no explanations.`,
       data: { otp_code: null, otp_expires_at: null },
     })
 
-    if (company.session_id && company.whatsapp_connector_server) {
+    if (company.session_id) {
       try {
         await this.whatsBaileyService.removeSession(company)
       } catch (e) {

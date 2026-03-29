@@ -17,7 +17,6 @@ import { CompanyModule } from './company/company.module'
 import { ExpressAdapter } from '@bull-board/express'
 import { BullBoardModule } from '@bull-board/nestjs'
 import { bullBoardAuthMiddleware } from './utils/Middlewares/bull-board-auth.middleware'
-import { WhatsappConnectorModule } from './whatsapp-connector/whatsapp-connector.module'
 import { AuthModule } from './auth/auth.module'
 
 @Module({
@@ -55,7 +54,6 @@ import { AuthModule } from './auth/auth.module'
     }),
     ContactModule,
     CompanyModule,
-    WhatsappConnectorModule,
     AuthModule,
   ],
   controllers: [AppController],

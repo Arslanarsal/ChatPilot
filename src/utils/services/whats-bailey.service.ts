@@ -7,7 +7,6 @@ import {
   Logger,
 } from '@nestjs/common'
 import axios from 'axios'
-import { whatsapp_connector_server } from '@prisma/client'
 import { ConfigsService } from 'src/config'
 import { Company, Contact } from '../constants/types'
 import * as QRCode from 'qrcode'
@@ -22,6 +21,10 @@ export class WhatsBaileyService {
     private readonly companyService: CompanyService,
   ) {}
 
+  private get serverUrl(): string {
+    return this.config.wbBaseUrl
+  }
+
   async sendMessage(
     company: Company,
     phone: number,
@@ -30,7 +33,7 @@ export class WhatsBaileyService {
     videoUrl?: string,
     isFromLid: boolean = false,
   ): Promise<string | null> {
-    const url = `${company.whatsapp_connector_server?.url}/api/v1/whatsapp/${company.session_id}/send-message`
+    const url = `${this.serverUrl}/api/v1/whatsapp/${company.session_id}/send-message`
 
     const config = {
       headers: { 'Content-Type': 'application/json' },
@@ -82,10 +85,10 @@ export class WhatsBaileyService {
 
   async getLid(company: Company, phone: string): Promise<bigint | null> {
     try {
-      if (!company.whatsapp_connector_server?.url || !company.session_id) {
+      if (!company.session_id) {
         return null
       }
-      const url = `${company.whatsapp_connector_server.url}/api/v1/whatsapp/${company.session_id}/is-on-whatsapp-with-lid`
+      const url = `${this.serverUrl}/api/v1/whatsapp/${company.session_id}/is-on-whatsapp-with-lid`
       const response = await axios.post(url, { number: phone }, { timeout: 15000 })
       if (response.status === 201 && response.data?.length > 0) {
         const lid: string | null = response.data[0]?.lid ?? null
@@ -113,13 +116,11 @@ export class WhatsBaileyService {
           companyId: company.id,
           phone: company.phone,
           session_id: company.session_id,
-          server_url: company.whatsapp_connector_server?.url,
-          type: company.whatsapp_connector_server?.type,
           error: 'company session_id is not defined',
         })
         return { success: false, message: 'company session_id is not defined' }
       }
-      const url = `${company?.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/${company.session_id}/status`
+      const url = `${this.serverUrl}/api/v1/whatsapp/sessions/${company.session_id}/status`
       this.logger.log('URL:', url)
       const response = await axios.get(url)
 
@@ -128,7 +129,6 @@ export class WhatsBaileyService {
           companyId: company.id,
           phone: company.phone,
           session_id: company.session_id,
-          server_url: company.whatsapp_connector_server?.url,
           error: `Error starting session: ${response?.status} res.data: ${JSON.stringify(response?.data)} `,
         })
         return {
@@ -148,7 +148,6 @@ export class WhatsBaileyService {
         companyId: company.id,
         phone: company.phone,
         session_id: company.session_id,
-        server_url: company.whatsapp_connector_server?.url,
         error: e?.message || 'Unknown error',
       })
       return {
@@ -166,7 +165,7 @@ export class WhatsBaileyService {
     qr?: string
     error?: string
   }> {
-    const url = `${company?.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/qrcode/${company.session_id}`
+    const url = `${this.serverUrl}/api/v1/whatsapp/sessions/qrcode/${company.session_id}`
 
     const response = await axios.get(url)
     if (response.status !== 200 || !response.data.success) {
@@ -204,7 +203,6 @@ export class WhatsBaileyService {
   }
   async startSession(
     company: Company,
-    sever: whatsapp_connector_server,
     usePairingCode?: boolean,
     phoneNumber?: string,
   ): Promise<{
@@ -213,7 +211,7 @@ export class WhatsBaileyService {
     pairingCode?: string
     error?: string
   }> {
-    const url = `${sever?.url}/api/v1/whatsapp/connect`
+    const url = `${this.serverUrl}/api/v1/whatsapp/connect`
 
     const body: any = { id: `${company.id}` }
     if (usePairingCode) {
@@ -239,7 +237,7 @@ export class WhatsBaileyService {
     message?: string
   }> {
     try {
-      const url = `${company.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/pairingcode/${company.session_id}`
+      const url = `${this.serverUrl}/api/v1/whatsapp/sessions/pairingcode/${company.session_id}`
       const response = await axios.get(url)
       return response.data
     } catch (error) {
@@ -254,10 +252,8 @@ export class WhatsBaileyService {
     error?: string
   }> {
     const company: Company = contact.companies
-    const sever: whatsapp_connector_server | null =
-      company.whatsapp_connector_server
 
-    const url = `${sever?.url}/api/v1/whatsapp/chat/mock-typing`
+    const url = `${this.serverUrl}/api/v1/whatsapp/chat/mock-typing`
 
     const contactNumber = contact.phone ? `${contact.phone}` : `${contact.lid}`
     const body = {
@@ -281,7 +277,7 @@ export class WhatsBaileyService {
     error?: string
   }> {
     try {
-      const url = `${company.whatsapp_connector_server?.url}/api/v1/whatsapp/sessions/${company.session_id}/remove`
+      const url = `${this.serverUrl}/api/v1/whatsapp/sessions/${company.session_id}/remove`
       this.logger.log('Removing session, URL:', url)
       const response = await axios.get(url)
 
@@ -306,9 +302,7 @@ export class WhatsBaileyService {
     error?: string
   }> {
     const company: Company = contact.companies
-    const sever: whatsapp_connector_server | null =
-      company.whatsapp_connector_server
-    const url = `${sever?.url}/api/v1/whatsapp/chat/clear-mock-typing`
+    const url = `${this.serverUrl}/api/v1/whatsapp/chat/clear-mock-typing`
 
     const contactNumber = contact.phone ? `${contact.phone}` : `${contact.lid}`
     const body = {

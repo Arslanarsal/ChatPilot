@@ -6,35 +6,26 @@ datasource db {
   provider = "postgresql"
 }
 
-model whatsapp_connector_server {
-  id        Int         @id @default(autoincrement())
-  type      String
-  url       String      @unique(map: "unique server url")
-  companies companies[]
-}
-
 model companies {
-  id                           Int                        @id(map: "poc_clinics_companies_pkey") @default(autoincrement())
-  created_at                   DateTime                   @default(now()) @db.Timestamptz(6)
-  name                         String                     @db.VarChar
-  cal_event_type_id            BigInt?                    @default(0)
-  cal_event_slug               String?                    @db.VarChar
-  cal_api_key                  String?                    @db.VarChar
-  cal_booking_length           BigInt?
-  phone                        BigInt                     @unique(map: "unique phone")
-  updated_at                   DateTime?                  @db.Timestamptz(6)
-  is_bot_activated             Boolean?                   @default(true)
-  session_id                   String?                    @unique(map: "poc_clinics_companies_wapi_id_key")
-  whatsapp_connector_server_id Int?
-  crm_provider                 String?                    @db.VarChar
-  whatsapp_connection_status   Boolean?
-  assistant_id                 Int?
-  business_details             Json?
-  assistant_instructions       assistant_instructions?    @relation(fields: [assistant_id], references: [id])
-  whatsapp_connector_server    whatsapp_connector_server? @relation(fields: [whatsapp_connector_server_id], references: [id], map: "poc_clinics_companies_whatsapp_connector_server_id_fkey")
-  contacts                     contacts[]
-  users                        users[]
-  company_assets               company_assets[]
+  id                         Int                     @id(map: "poc_clinics_companies_pkey") @default(autoincrement())
+  created_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  name                       String                  @db.VarChar
+  cal_event_type_id          BigInt?                 @default(0)
+  cal_event_slug             String?                 @db.VarChar
+  cal_api_key                String?                 @db.VarChar
+  cal_booking_length         BigInt?
+  phone                      BigInt                  @unique(map: "unique phone")
+  updated_at                 DateTime?               @db.Timestamptz(6)
+  is_bot_activated           Boolean?                @default(true)
+  session_id                 String?                 @unique(map: "poc_clinics_companies_wapi_id_key")
+  crm_provider               String?                 @db.VarChar
+  whatsapp_connection_status Boolean?
+  assistant_id               Int?
+  business_details           Json?
+  assistant_instructions     assistant_instructions? @relation(fields: [assistant_id], references: [id])
+  contacts                   contacts[]
+  users                      users[]
+  company_assets             company_assets[]
 }
 
 model users {
@@ -119,12 +110,10 @@ model company_assets {
 model whats_app_session {
   id        Int      @id @default(autoincrement())
   sessionId String   @unique
-  serverId  Int
   creds     Json?
   keys      Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([sessionId], map: "idx_whats_app_session_sessionId")
-  @@index([serverId], map: "idx_whats_app_session_serverId")
 }

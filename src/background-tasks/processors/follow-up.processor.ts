@@ -48,11 +48,7 @@ export class FollowUpProcessor extends WorkerHost {
         last_message_received: { lt: cutoffDate },
       },
       include: {
-        companies: {
-          include: {
-            whatsapp_connector_server: true,
-          },
-        },
+        companies: true,
         messages: {
           orderBy: { sent_at: 'desc' },
           take: 1,
