@@ -93,11 +93,35 @@ export class WhatsBaileyDto {
 
   @ApiProperty({
     type: 'object',
-    description: 'Media information',
+    description: 'Media buffer data (for audio transcription)',
     required: false,
     example: {},
   })
   mediaBuffer?: any
+
+  @ApiProperty({
+    type: 'string',
+    description: 'Media URL after upload to Supabase',
+    required: false,
+    example: 'https://example.supabase.co/storage/v1/object/public/ChatPilot-media/123/456/media.jpg',
+  })
+  mediaUrl?: string
+
+  @ApiProperty({
+    type: 'string',
+    description: 'MIME type of the media',
+    required: false,
+    example: 'image/jpeg',
+  })
+  mediaType?: string
+
+  @ApiProperty({
+    type: 'number',
+    description: 'Size of the media in bytes',
+    required: false,
+    example: 1024,
+  })
+  mediaSize?: number
 
   @ApiProperty({
     type: 'object',

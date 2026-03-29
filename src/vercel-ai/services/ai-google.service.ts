@@ -64,6 +64,10 @@ export class AiGoogleService {
       If you need to know the names of the upcoming days, use these values:
       ${this.datesHelper.getDateAliases()}]
       `
+      this.logger.log('ai-sdk system prompt', JSON.stringify(systemPrompt), )
+       this.logger.log('assistant  system prompt ?????????????????', JSON.stringify(assistant), )
+      this.logger.log('chathistory system prompt=============', JSON.stringify(chatHistory), )
+      
       const { text, usage, providerMetadata, response } = await generateText({
         model: assistant.model,
         system: systemPrompt,

@@ -11,6 +11,10 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { LanguageModel } from 'ai'
 import { AiToolsService } from './ai-tools.service'
+import {
+  BUILTIN_TOOL_INSTRUCTIONS,
+  buildAssetsPrompt,
+} from '../constants/builtin-prompt'
 
 type AssistantConfig = {
   systemPrompt: string
@@ -45,10 +49,20 @@ export class AiAssistantConfigService {
     }
 
     try {
-      const assistant =
-        await this.prismaService.assistant_instructions.findFirst({
+      const [assistant, assets] = await Promise.all([
+        this.prismaService.assistant_instructions.findFirst({
           where: { id: company.assistant_id },
-        })
+        }),
+        this.prismaService.company_assets.findMany({
+          where: { company_id: company.id },
+          select: {
+            file_url: true,
+            file_type: true,
+            file_name: true,
+            description: true,
+          },
+        }),
+      ])
 
       if (!assistant) {
         this.logger.error('Assistant instructions not found', {
@@ -60,9 +74,14 @@ export class AiAssistantConfigService {
       const modelConfig = this.getModel(assistant.model ?? 'gpt-4o-mini')
       const tools = this.aiToolsService.getContactTools(contact, [])
 
+      // Assemble full prompt: built-in tool instructions + company custom prompt + asset references
+      const companyPrompt =
+        assistant.system_prompt ?? 'You are a helpful AI assistant.'
+      const assetsPrompt = buildAssetsPrompt(assets)
+      const fullSystemPrompt = `${BUILTIN_TOOL_INSTRUCTIONS}\n\n## Your Role & Instructions\n\n${companyPrompt}${assetsPrompt}`
+
       return {
-        systemPrompt:
-          assistant.system_prompt ?? 'You are a helpful AI assistant.',
+        systemPrompt: fullSystemPrompt,
         model: modelConfig.model,
         tools,
         temperature: assistant.temperature ?? 0.1,

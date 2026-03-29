@@ -14,7 +14,10 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { CompanyService } from './company.service'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { ApiBody, ApiHeader, ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger'
@@ -309,6 +312,63 @@ export class CompanyController {
     return this.contactService.updateContact(contactId, {
       is_bot_activated: body.is_bot_activated,
     })
+  }
+
+  // ─── Company Assets (File Upload) ──────────────────────────────
+
+  @ApiOperation({ summary: 'Upload a company asset (image, PDF, doc)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/assets/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAsset(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('description') description?: string,
+  ) {
+    await this.verifyOwnership(req.user.userId, id)
+    if (!file) throw new UnprocessableEntityException('No file provided')
+    return this.companyService.uploadAsset(id, file, description)
+  }
+
+  @ApiOperation({ summary: 'Get all company assets' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/assets')
+  async getAssets(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    await this.verifyOwnership(req.user.userId, id)
+    return this.companyService.getAssets(id)
+  }
+
+  @ApiOperation({ summary: 'Update asset description' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/assets/:assetId')
+  async updateAsset(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('assetId', ParseIntPipe) assetId: number,
+    @Body() body: { description: string },
+  ) {
+    await this.verifyOwnership(req.user.userId, id)
+    return this.companyService.updateAssetDescription(id, assetId, body.description)
+  }
+
+  @ApiOperation({ summary: 'Delete a company asset' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/assets/:assetId')
+  async deleteAsset(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('assetId', ParseIntPipe) assetId: number,
+  ) {
+    await this.verifyOwnership(req.user.userId, id)
+    return this.companyService.deleteAsset(id, assetId)
   }
 
   @ApiOperation({ summary: 'Get chat history for a contact' })

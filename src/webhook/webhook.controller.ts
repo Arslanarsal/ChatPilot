@@ -27,4 +27,18 @@ export class WebhookController {
   whatsBaileyStatusWebhook(@Body() statusDto: WbConnectionUpdateDto) {
     return this.webhookService.updateConnectionStatus(statusDto)
   }
+
+  @ApiOperation({ summary: 'Upload media from WB to Supabase storage' })
+  @Post('upload-media')
+  uploadMedia(
+    @Body()
+    body: {
+      mediaBuffer: any
+      mimeType: string
+      companyPhone: string
+      contactPhone: string
+    },
+  ) {
+    return this.webhookService.uploadMedia(body)
+  }
 }

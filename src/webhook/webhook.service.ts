@@ -4,6 +4,7 @@ import { ContactService } from '../contact/contact.service'
 import { ReplyService } from 'src/background-tasks/services/reply.service'
 import { CompanyService } from 'src/company/company.service'
 import { AUTHOR_TYPE, ORIGINAL_MESSAGE_TYPE } from 'src/utils/constants/types'
+import { SupabaseStorageService } from 'src/utils/services/supabase-storage.service'
 import OpenAI from 'openai'
 import { WhatsBaileyDto } from './dto/whats-bailey.dto'
 import { WbConnectionUpdateDto } from './dto/wb-connection-update.dto'
@@ -15,6 +16,7 @@ export class WebhookService {
     private readonly contactService: ContactService,
     private readonly replyService: ReplyService,
     private readonly companyService: CompanyService,
+    private readonly supabaseStorageService: SupabaseStorageService,
   ) {}
 
   private async processWebhook({
@@ -170,17 +172,60 @@ export class WebhookService {
     return 'success'
   }
 
+  async uploadMedia(body: {
+    mediaBuffer: any
+    mimeType: string
+    companyPhone: string
+    contactPhone: string
+  }): Promise<{ success: boolean; mediaUrl: string | null }> {
+    try {
+      const buffer = Buffer.from(body.mediaBuffer)
+      const mediaUrl = await this.supabaseStorageService.uploadMedia(
+        buffer,
+        body.mimeType,
+        body.companyPhone,
+        body.contactPhone,
+      )
+
+      if (mediaUrl) {
+        this.logger.log(`Media uploaded: ${mediaUrl}`)
+        return { success: true, mediaUrl }
+      }
+
+      return { success: false, mediaUrl: null }
+    } catch (error) {
+      this.logger.error('uploadMedia failed', { error: error.message })
+      return { success: false, mediaUrl: null }
+    }
+  }
+
   async whatsBaileyWebhook(baileyDto: WhatsBaileyDto): Promise<string> {
     this.logger.verbose('Bailey webhook received', { baileyDto })
     this.logger.log('baileyDto', baileyDto)
-    baileyDto['originalMessageType'] = baileyDto.isAudio
-      ? ORIGINAL_MESSAGE_TYPE.AUDIO
-      : ORIGINAL_MESSAGE_TYPE.TEXT
+
+    // Determine message type
+    if (baileyDto.isAudio) {
+      baileyDto['originalMessageType'] = ORIGINAL_MESSAGE_TYPE.AUDIO
+    } else if (baileyDto.hasMedia && baileyDto.mediaUrl) {
+      baileyDto['originalMessageType'] = ORIGINAL_MESSAGE_TYPE.TEXT
+    } else {
+      baileyDto['originalMessageType'] = ORIGINAL_MESSAGE_TYPE.TEXT
+    }
+
     if (baileyDto.isAudio) {
       baileyDto.text = await this.transcribeMessage(
         Buffer.from(baileyDto.mediaBuffer),
       )
     }
+
+    // If message has media with a URL (image/video/doc), include it in the text
+    if (baileyDto.hasMedia && !baileyDto.isAudio && baileyDto.mediaUrl) {
+      const mediaNote = `[Media: ${baileyDto.mediaUrl}]`
+      baileyDto.text = baileyDto.text
+        ? `${baileyDto.text}\n${mediaNote}`
+        : mediaNote
+    }
+
     if (baileyDto.hasLocation && baileyDto.location) {
       baileyDto.text = `/location  latitude:${baileyDto.location.latitude}, longitude: ${baileyDto.location.longitude}`
     }

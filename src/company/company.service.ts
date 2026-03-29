@@ -11,6 +11,7 @@ import { companies, whatsapp_connector_server } from '@prisma/client'
 import { Company } from 'src/utils/constants/types'
 import { WhatsAppConnectorType } from 'src/whatsapp-connector/dto/create-whatsapp-connector.dto'
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
+import { SupabaseStorageService } from 'src/utils/services/supabase-storage.service'
 import { generateText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 
@@ -22,6 +23,7 @@ export class CompanyService {
     private readonly prisma: PrismaService,
     @Inject(forwardRef(() => WhatsBaileyService))
     private readonly whatsBaileyService: WhatsBaileyService,
+    private readonly supabaseStorage: SupabaseStorageService,
   ) {}
 
   async findByPhone(targetPhone: number) {
@@ -505,5 +507,98 @@ Generate ONLY the system prompt text, no explanations.`,
     })
 
     return { success: true, message: 'Company and all related data deleted successfully' }
+  }
+
+  // ─── Company Assets (File Upload) ──────────────────────────────
+
+  async uploadAsset(
+    companyId: number,
+    file: { originalname: string; buffer: Buffer; mimetype: string },
+    description?: string,
+  ) {
+    const fileUrl = await this.supabaseStorage.uploadCompanyAsset(
+      companyId,
+      file.originalname,
+      file.buffer,
+      file.mimetype,
+    )
+
+    if (!fileUrl) {
+      throw new UnprocessableEntityException('Failed to upload file')
+    }
+
+    const fileType = this.getFileType(file.mimetype, file.originalname)
+
+    const asset = await this.prisma.company_assets.create({
+      data: {
+        company_id: companyId,
+        file_url: fileUrl,
+        file_type: fileType,
+        file_name: file.originalname,
+        description: description || null,
+      },
+    })
+
+    return asset
+  }
+
+  async getAssets(companyId: number) {
+    return this.prisma.company_assets.findMany({
+      where: { company_id: companyId },
+      orderBy: { created_at: 'desc' },
+    })
+  }
+
+  async deleteAsset(companyId: number, assetId: number) {
+    const asset = await this.prisma.company_assets.findFirst({
+      where: { id: assetId, company_id: companyId },
+    })
+
+    if (!asset) {
+      throw new UnprocessableEntityException('Asset not found')
+    }
+
+    // Delete from Supabase storage
+    await this.supabaseStorage.deleteCompanyAsset(asset.file_url)
+
+    // Delete from DB
+    await this.prisma.company_assets.delete({
+      where: { id: assetId },
+    })
+
+    return { success: true }
+  }
+
+  async updateAssetDescription(companyId: number, assetId: number, description: string) {
+    const asset = await this.prisma.company_assets.findFirst({
+      where: { id: assetId, company_id: companyId },
+    })
+
+    if (!asset) {
+      throw new UnprocessableEntityException('Asset not found')
+    }
+
+    return this.prisma.company_assets.update({
+      where: { id: assetId },
+      data: { description },
+    })
+  }
+
+  private getFileType(mimetype: string, filename: string): string {
+    if (mimetype.startsWith('image/')) return 'image'
+    if (mimetype.startsWith('video/')) return 'video'
+    if (mimetype === 'application/pdf') return 'pdf'
+    if (mimetype.includes('word') || mimetype.includes('document')) return 'doc'
+    if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return 'xls'
+    if (mimetype.includes('powerpoint') || mimetype.includes('presentation')) return 'ppt'
+
+    // Fallback to extension
+    const ext = filename.split('.').pop()?.toLowerCase() || ''
+    if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) return 'image'
+    if (['mp4', 'mov', '3gp'].includes(ext)) return 'video'
+    if (ext === 'pdf') return 'pdf'
+    if (['doc', 'docx'].includes(ext)) return 'doc'
+
+    return ext || 'file'
   }
 }
