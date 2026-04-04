@@ -48,7 +48,6 @@ model contacts {
   phone                    BigInt?
   schedule_event           Json?              @db.Json
   last_message_received    DateTime           @default(now()) @db.Timestamptz(6)
-  appointment_scheduled_on DateTime?          @db.Timestamptz(6)
   total_messages           Int                @default(0)
   needs_review             Boolean            @default(false)
   company_id               Int?               @default(1)
@@ -60,8 +59,6 @@ model contacts {
   contact_stop_date        DateTime?          @db.Timestamptz(6)
   is_replies_activated     Boolean?           @default(true)
   is_follow_up_sent        Boolean            @default(false)
-  latitude                 Float?
-  longitude                Float?
   lid                      BigInt?
   companies                companies?         @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "poc_clinics_contacts_company_id_fk")
   messages                 messages[]
