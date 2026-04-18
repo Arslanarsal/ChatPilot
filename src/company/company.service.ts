@@ -12,7 +12,9 @@ import { Company } from 'src/utils/constants/types'
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
 import { SupabaseStorageService } from 'src/utils/services/supabase-storage.service'
 import { generateText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+
+const OTP_TTL_MS = 60 * 1000
 
 @Injectable()
 export class CompanyService {
@@ -215,10 +217,12 @@ export class CompanyService {
       )
     }
 
-    const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    const google = createGoogleGenerativeAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    })
 
     const { text: generatedPrompt } = await generateText({
-      model: openai('gpt-4o-mini'),
+      model: google('gemini-2.5-flash'),
       prompt: `You are an expert at creating WhatsApp business chatbot system prompts. Based on the following business description, generate a comprehensive system prompt for a WhatsApp AI assistant. The prompt should define the bot's personality, knowledge, and behavior.
 
 Business Description:
@@ -351,7 +355,7 @@ Generate ONLY the system prompt text, no explanations.`,
     if (!company) throw new UnprocessableEntityException('Company not found')
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS)
 
     const user = await this.prisma.users.findFirst({
       where: { company_id: companyId },
@@ -368,7 +372,7 @@ Generate ONLY the system prompt text, no explanations.`,
       await this.whatsBaileyService.sendMessage(
         otpCompany,
         Number(user.phone),
-        `Your ChatPilot delete verification code is: *${otp}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
+        `Your ChatPilot delete verification code is: *${otp}*\n\nThis code expires in 1 minute. Do not share it with anyone.`,
       )
     } else {
       throw new UnprocessableEntityException('OTP service unavailable')

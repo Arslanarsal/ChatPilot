@@ -27,7 +27,7 @@ class EnvironmentVariables {
   @IsDefined()
   @IsString()
   @MinLength(1)
-  OPENAI_API_KEY: string
+  GEMINI_API_KEY: string
 
   @IsDefined()
   @IsString()

@@ -17,6 +17,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto'
 import { CompanyService } from 'src/company/company.service'
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
 
+const OTP_TTL_MS = 60 * 1000
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name)
@@ -135,7 +137,7 @@ export class AuthService {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS)
 
     try {
       await this.prisma.users.update({
@@ -157,7 +159,7 @@ export class AuthService {
         await this.whatsBaileyService.sendMessage(
           company,
           Number(dto.phone),
-          `Your ChatPilot verification code is: *${otp}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
+          `Your ChatPilot verification code is: *${otp}*\n\nThis code expires in 1 minute. Do not share it with anyone.`,
         )
       } else {
         this.logger.error('Company 1 not found for OTP sending')

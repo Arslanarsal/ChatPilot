@@ -18,7 +18,7 @@ const appConfig = registerAs(ConfigKey.App, () => ({
     Environment[process.env.NODE_ENV as keyof typeof Environment] ||
     Environment.Development,
   port: Number(process.env.PORT) || 3000,
-  openAiApiKey: process.env.OPENAI_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY,
   redisUrl: process.env.REDIS_URL,
   chatPilotApiKey: process.env.chatPilot_API_KEY,
   jwtSecret: process.env.JWT_SECRET,

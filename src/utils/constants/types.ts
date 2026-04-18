@@ -27,11 +27,6 @@ export enum ORIGINAL_MESSAGE_TYPE {
   AUDIO = 'audio',
 }
 
-export type OpenAIScheduleEventPayload = {
-  status: 'booked' | 'cancelled' | 'neither' | 'no_event'
-  date: string | null
-}
-
 export type AiChatMessage = {
   role: string
   content: {

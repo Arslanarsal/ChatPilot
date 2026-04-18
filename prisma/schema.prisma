@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model companies {
@@ -84,7 +85,7 @@ model messages {
 
 model assistant_instructions {
   id            Int         @id(map: "poc_assistant_instructions_pkey") @default(autoincrement())
-  model         String?     @default("gpt-4o-mini")
+  model         String?     @default("gemini-2.5-flash")
   temperature   Float?      @default(0.1)
   system_prompt String?
   companies     companies[]
