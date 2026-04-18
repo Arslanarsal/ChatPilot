@@ -298,6 +298,12 @@ Generate ONLY the system prompt text, no explanations.`,
     page: number,
     limit: number,
     search?: string,
+    filters?: {
+      needs_review?: string
+      bot_activated?: string
+      has_appointment?: string
+      active_within?: string
+    },
   ) {
     const skip = (page - 1) * limit
     const where: any = {
@@ -309,6 +315,30 @@ Generate ONLY the system prompt text, no explanations.`,
         { name: { contains: search, mode: 'insensitive' } },
         { whatsapp_profile_name: { contains: search, mode: 'insensitive' } },
       ]
+    }
+
+    if (filters?.needs_review === 'true') {
+      where.needs_review = true
+    }
+
+    if (filters?.bot_activated === 'true') {
+      where.is_bot_activated = true
+    } else if (filters?.bot_activated === 'false') {
+      where.is_bot_activated = false
+    }
+
+    if (filters?.has_appointment === 'true') {
+      where.crm_appointment_id = { not: null }
+    }
+
+    if (filters?.active_within === '24h') {
+      where.last_message_received = {
+        gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      }
+    } else if (filters?.active_within === '7d') {
+      where.last_message_received = {
+        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      }
     }
 
     const [contacts, total] = await Promise.all([

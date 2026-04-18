@@ -293,9 +293,18 @@ export class CompanyController {
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '20',
     @Query('search') search?: string,
+    @Query('needs_review') needs_review?: string,
+    @Query('bot_activated') bot_activated?: string,
+    @Query('has_appointment') has_appointment?: string,
+    @Query('active_within') active_within?: string,
   ) {
     await this.verifyOwnership(req.user.userId, id)
-    return this.companyService.getContacts(id, +page, +limit, search)
+    return this.companyService.getContacts(id, +page, +limit, search, {
+      needs_review,
+      bot_activated,
+      has_appointment,
+      active_within,
+    })
   }
 
   @ApiOperation({ summary: 'Toggle bot activation for a contact' })
