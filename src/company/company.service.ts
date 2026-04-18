@@ -12,7 +12,9 @@ import { Company } from 'src/utils/constants/types'
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
 import { SupabaseStorageService } from 'src/utils/services/supabase-storage.service'
 import { generateText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+
+const OTP_TTL_MS = 60 * 1000
 
 @Injectable()
 export class CompanyService {
@@ -215,10 +217,12 @@ export class CompanyService {
       )
     }
 
-    const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    const google = createGoogleGenerativeAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    })
 
     const { text: generatedPrompt } = await generateText({
-      model: openai('gpt-4o-mini'),
+      model: google('gemini-2.5-flash'),
       prompt: `You are an expert at creating WhatsApp business chatbot system prompts. Based on the following business description, generate a comprehensive system prompt for a WhatsApp AI assistant. The prompt should define the bot's personality, knowledge, and behavior.
 
 Business Description:
@@ -294,6 +298,12 @@ Generate ONLY the system prompt text, no explanations.`,
     page: number,
     limit: number,
     search?: string,
+    filters?: {
+      needs_review?: string
+      bot_activated?: string
+      has_appointment?: string
+      active_within?: string
+    },
   ) {
     const skip = (page - 1) * limit
     const where: any = {
@@ -305,6 +315,30 @@ Generate ONLY the system prompt text, no explanations.`,
         { name: { contains: search, mode: 'insensitive' } },
         { whatsapp_profile_name: { contains: search, mode: 'insensitive' } },
       ]
+    }
+
+    if (filters?.needs_review === 'true') {
+      where.needs_review = true
+    }
+
+    if (filters?.bot_activated === 'true') {
+      where.is_bot_activated = true
+    } else if (filters?.bot_activated === 'false') {
+      where.is_bot_activated = false
+    }
+
+    if (filters?.has_appointment === 'true') {
+      where.crm_appointment_id = { not: null }
+    }
+
+    if (filters?.active_within === '24h') {
+      where.last_message_received = {
+        gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      }
+    } else if (filters?.active_within === '7d') {
+      where.last_message_received = {
+        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      }
     }
 
     const [contacts, total] = await Promise.all([
@@ -351,7 +385,7 @@ Generate ONLY the system prompt text, no explanations.`,
     if (!company) throw new UnprocessableEntityException('Company not found')
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS)
 
     const user = await this.prisma.users.findFirst({
       where: { company_id: companyId },
@@ -368,7 +402,7 @@ Generate ONLY the system prompt text, no explanations.`,
       await this.whatsBaileyService.sendMessage(
         otpCompany,
         Number(user.phone),
-        `Your ChatPilot delete verification code is: *${otp}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
+        `Your ChatPilot delete verification code is: *${otp}*\n\nThis code expires in 1 minute. Do not share it with anyone.`,
       )
     } else {
       throw new UnprocessableEntityException('OTP service unavailable')

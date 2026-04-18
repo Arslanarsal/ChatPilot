@@ -5,7 +5,8 @@ import { ReplyService } from 'src/background-tasks/services/reply.service'
 import { CompanyService } from 'src/company/company.service'
 import { AUTHOR_TYPE, ORIGINAL_MESSAGE_TYPE } from 'src/utils/constants/types'
 import { SupabaseStorageService } from 'src/utils/services/supabase-storage.service'
-import OpenAI from 'openai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { generateText } from 'ai'
 import { WhatsBaileyDto } from './dto/whats-bailey.dto'
 import { WbConnectionUpdateDto } from './dto/wb-connection-update.dto'
 
@@ -135,16 +136,33 @@ export class WebhookService {
     }
   }
 
-  async transcribeMessage(buffer) {
+  async transcribeMessage(buffer: Buffer) {
     try {
-      const openai = new OpenAI()
-      const transcription = await openai.audio.transcriptions.create({
-        file: new File([buffer], 'audio.ogg', { type: 'audio/ogg' }),
-        model: 'whisper-1',
-        response_format: 'text',
+      const google = createGoogleGenerativeAI({
+        apiKey: process.env.GEMINI_API_KEY,
       })
 
-      return transcription
+      const { text } = await generateText({
+        model: google('gemini-2.5-flash'),
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Transcribe this audio exactly. Return only the transcription text, nothing else.',
+              },
+              {
+                type: 'file',
+                data: buffer,
+                mediaType: 'audio/ogg',
+              },
+            ],
+          },
+        ],
+      })
+
+      return text
     } catch (error) {
       console.error('Error:', error)
       throw error

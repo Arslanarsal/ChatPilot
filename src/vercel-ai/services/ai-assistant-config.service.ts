@@ -3,11 +3,8 @@ import { PrismaService } from 'src/prisma/prisma.service'
 import { Contact } from 'src/utils/constants/types'
 import {
   GEMINI_MODELS,
-  OPENAI_MODELS,
   GeminiModelKey,
-  OpenAIModelKey,
 } from 'src/common/logging/getModel'
-import { createOpenAI } from '@ai-sdk/openai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { LanguageModel } from 'ai'
 import { AiToolsService } from './ai-tools.service'
@@ -15,6 +12,8 @@ import {
   BUILTIN_TOOL_INSTRUCTIONS,
   buildAssetsPrompt,
 } from '../constants/builtin-prompt'
+
+const DEFAULT_MODEL: GeminiModelKey = 'gemini-2.5-flash'
 
 type AssistantConfig = {
   systemPrompt: string
@@ -71,7 +70,7 @@ export class AiAssistantConfigService {
         return null
       }
 
-      const modelConfig = this.getModel(assistant.model ?? 'gpt-4o-mini')
+      const modelConfig = this.getModel(assistant.model ?? DEFAULT_MODEL)
       const tools = this.aiToolsService.getContactTools(contact, [])
 
       // Assemble full prompt: built-in tool instructions + company custom prompt + asset references
@@ -101,41 +100,19 @@ export class AiAssistantConfigService {
     model: LanguageModel
     metadata: { provider: string; model: string }
   } {
-    if (GEMINI_MODELS.includes(modelName as GeminiModelKey)) {
-      const model = createGoogleGenerativeAI({
-        apiKey: process.env.GEMINI_API_KEY,
-      })(modelName)
-      return {
-        model,
-        metadata: {
-          provider: 'google',
-          model: modelName,
-        },
-      }
-    }
+    const google = createGoogleGenerativeAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    })
 
-    if (OPENAI_MODELS.includes(modelName as OpenAIModelKey)) {
-      const model = createOpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      })(modelName)
-      return {
-        model,
-        metadata: {
-          provider: 'openai',
-          model: modelName,
-        },
-      }
-    }
+    const resolvedName = GEMINI_MODELS.includes(modelName as GeminiModelKey)
+      ? (modelName as GeminiModelKey)
+      : DEFAULT_MODEL
 
-    // Default to OpenAI gpt-4o-mini
-    const model = createOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })('gpt-4o-mini')
     return {
-      model,
+      model: google(resolvedName),
       metadata: {
-        provider: 'openai',
-        model: 'gpt-4o-mini',
+        provider: 'google',
+        model: resolvedName,
       },
     }
   }

@@ -4,7 +4,6 @@ import { AiChatMessage, Company, Contact } from 'src/utils/constants/types'
 import { DatesHelper } from 'src/utils/services/dates.service'
 import { AiToolsService } from './ai-tools.service'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { createOpenAI } from '@ai-sdk/openai'
 import { ModelKey, ProviderKey } from 'src/common/logging/getModel'
 import { AiAssistantConfigService } from './ai-assistant-config.service'
 
@@ -153,7 +152,7 @@ export class AiGoogleService {
         context: 'processPrompt',
         parameters: {
           provider: 'google',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           contactId: contact?.id,
           contactPhone: contact?.phone,
           companyId: contact?.companies?.id,
@@ -174,7 +173,7 @@ export class AiGoogleService {
         context: 'processPrompt',
         parameters: {
           provider: 'google',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           contactId: contact?.id,
           contactPhone: contact?.phone,
           companyId: contact?.companies?.id,
@@ -188,95 +187,6 @@ export class AiGoogleService {
       // Return a meaningful error response instead of undefined
       throw new Error(
         `Failed to process message with Google AI: ${error.message}`,
-      )
-    }
-  }
-
-  async processPromptsUsingOpenAI(
-    contact: Contact,
-    systemPrompt: string,
-    prompt: string,
-  ): Promise<{
-    text: string
-    usage: LanguageModelUsage
-    model: ModelKey
-    provider: ProviderKey
-  }> {
-    const tools = this.aiToolsService.getContactTools(contact)
-
-    // Validate inputs
-    if (!contact) {
-      throw new Error('Contact is required')
-    }
-
-    if (!systemPrompt) {
-      throw new Error('System prompt is required')
-    }
-    const modelName: ModelKey = 'gpt-5-mini'
-    try {
-      const openAi = createOpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      })
-
-      this.logger.log('prompt', {
-        context: 'processPrompt',
-        parameters: {
-          prompt,
-          contactId: contact?.id,
-          contactPhone: contact?.phone,
-          companyId: contact?.companies?.id,
-          companyPhone: contact?.companies?.phone,
-        },
-      })
-      const { text, usage, providerMetadata, response } = await generateText({
-        model: openAi(modelName),
-        system: systemPrompt,
-        tools,
-        // messages: chatHistory as any,
-        prompt: prompt,
-        temperature: 0.3,
-        stopWhen: stepCountIs(5),
-      })
-
-      this.logger.log('Successfully generated text response', {
-        context: 'processPrompt',
-        parameters: {
-          provider: 'openAI',
-          model: modelName,
-          contactId: contact?.id,
-          contactPhone: contact?.phone,
-          companyId: contact?.companies?.id,
-          companyPhone: contact?.companies?.phone,
-          prompt: prompt,
-          systemPrompt: systemPrompt,
-        },
-        result: text,
-      })
-      return {
-        text,
-        usage,
-        provider: Object.keys(providerMetadata as any)[0] as ProviderKey,
-        model: modelName as ModelKey,
-      }
-    } catch (error) {
-      this.logger.error('process prompt failed', {
-        context: 'processPrompt',
-        parameters: {
-          provider: 'openAI',
-          model: modelName,
-          contactId: contact?.id,
-          contactPhone: contact?.phone,
-          companyId: contact?.companies?.id,
-          companyPhone: contact?.companies?.phone,
-          prompt: prompt,
-          systemPrompt: systemPrompt,
-        },
-        error: error,
-      })
-
-      // Return a meaningful error response instead of undefined
-      throw new Error(
-        `Failed to process message with Open AI: ${error.message}`,
       )
     }
   }

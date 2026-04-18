@@ -42,12 +42,12 @@ export class ConfigsService {
     return redisPort
   }
 
-  get openAiApiKey(): string {
-    const openAiApiKey = this.configService.get<string>('App.openAiApiKey')
-    if (openAiApiKey === undefined) {
-      throw new Error('App.openAiApiKey  is not defined')
+  get geminiApiKey(): string {
+    const geminiApiKey = this.configService.get<string>('App.geminiApiKey')
+    if (geminiApiKey === undefined) {
+      throw new Error('App.geminiApiKey  is not defined')
     }
-    return openAiApiKey
+    return geminiApiKey
   }
   get sentryUrl(): string {
     const sentryUrl = this.configService.get<string>('App.sentry')
