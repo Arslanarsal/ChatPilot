@@ -15,6 +15,10 @@ import {
   ORIGINAL_MESSAGE_TYPE,
 } from 'src/utils/constants/types'
 import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
+import {
+  decryptMessagesInPlace,
+  encryptMessage,
+} from 'src/common/crypto/message-crypto'
 
 @Injectable()
 export class ContactService {
@@ -91,7 +95,7 @@ export class ContactService {
       })
     | null
   > {
-    return await this.prisma.contacts.findFirst({
+    const contact = await this.prisma.contacts.findFirst({
       where: { id: contactId },
       include: {
         companies: true,
@@ -103,6 +107,10 @@ export class ContactService {
         },
       },
     })
+    if (contact?.messages?.length) {
+      decryptMessagesInPlace(contact.messages)
+    }
+    return contact
   }
 
   async deleteContact(id: number) {
@@ -147,7 +155,7 @@ export class ContactService {
     await this.prisma.messages.create({
       data: {
         contact_id: self.id,
-        message: text,
+        message: encryptMessage(text),
         image_url: imageUrl,
         message_type: imageUrl ? 'image' : 'text',
         author_type: authorType,
@@ -200,7 +208,7 @@ export class ContactService {
         sent_at: 'asc',
       },
     })
-    return messages
+    return decryptMessagesInPlace(messages)
   }
 
   async saveIncomingMessage(
@@ -213,7 +221,7 @@ export class ContactService {
       data: {
         contact_id: self.id,
         sender_phone: self.phone,
-        message: text,
+        message: encryptMessage(text),
         author_type: AUTHOR_TYPE.HUMAN,
         original_message_type: originalMessageType,
         wb_id: wbId,

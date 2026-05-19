@@ -13,6 +13,7 @@ import { WhatsBaileyService } from 'src/utils/services/whats-bailey.service'
 import { SupabaseStorageService } from 'src/utils/services/supabase-storage.service'
 import { generateText } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { decryptMessagesInPlace } from 'src/common/crypto/message-crypto'
 
 const OTP_TTL_MS = 60 * 1000
 
@@ -377,7 +378,7 @@ Generate ONLY the system prompt text, no explanations.`,
       orderBy: { sent_at: 'asc' },
     })
 
-    return { contact, messages }
+    return { contact, messages: decryptMessagesInPlace(messages) }
   }
 
   async sendDeleteOtp(companyId: number) {
