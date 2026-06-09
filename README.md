@@ -1,108 +1,179 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# ChatPilot — API & AI Engine
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+ChatPilot is an AI-powered assistant that answers customer messages on a business's
+WhatsApp number automatically, 24/7. This repository is the **backend** — the brain of
+the system. It runs the AI agent, manages companies and their contacts, stores
+conversations, and talks to the WhatsApp connector service.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+It works together with two other services:
 
-## Description
+- **ChatPilot API** (this repo) — NestJS backend, AI agent, business logic, database
+- **WB** — a separate service that holds the live WhatsApp connection (Baileys)
+- **Frontend** — a Next.js dashboard where business owners configure everything
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## What it does
 
-```bash
-$ yarn install
+A customer sends a WhatsApp message → the WB service forwards it here through a webhook →
+ChatPilot loads that company's AI configuration and conversation history → **Google
+Gemini** generates a reply → ChatPilot sends the reply back through WB → the customer
+receives it on their normal WhatsApp chat.
+
+Each company gets its own AI personality, its own contacts, and its own conversation
+history. One backend serves many companies at the same time (multi-tenant).
+
+---
+
+## Key features
+
+- **AI agent powered by Google Gemini 2.5 Flash** — replies in English, Urdu, and mixed
+  language, in the business's own tone.
+- **Tool-using agent** — the AI can call functions instead of only replying with text:
+  - `save_name` — remembers the customer's name
+  - `book_appointment` — books a slot via cal.com
+  - `notify_company` — flags a lead or payment for a human to follow up
+  - `set_needs_review` — pauses the bot and asks a human to take over
+- **Multi-tenant** — many companies, each isolated with their own data and AI prompt.
+- **Per-contact bot toggle** — the bot can be switched off for one specific customer.
+- **Voice, image & PDF handling** — incoming media is processed and understood.
+- **Encrypted message storage** — every conversation is stored AES-256-GCM encrypted in
+  the database, keyed off `JWT_SECRET`.
+- **Background jobs** — replies and follow-ups run through a BullMQ + Redis queue so the
+  API stays fast and reliable.
+- **Auth** — JWT-based login, signup, refresh, and OTP-based password reset.
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Framework | NestJS (TypeScript) |
+| AI | Google Gemini via the Vercel AI SDK (`@ai-sdk/google`) |
+| Database | PostgreSQL + Prisma ORM (pg adapter) |
+| Queues | BullMQ + Redis |
+| Auth | JWT (`@nestjs/jwt`, Passport) + bcrypt |
+| File storage | Supabase Storage (media uploads) |
+| Monitoring | Sentry + Winston logging |
+| API docs | Swagger |
+
+---
+
+## Project structure
+
+```
+src/
+├── auth/              # login, signup, JWT, OTP password reset
+├── company/           # company settings, dashboard stats, AI prompt generation
+├── contact/           # contacts, messages, conversation history
+├── webhook/           # receives incoming WhatsApp messages from WB
+├── vercel-ai/         # the AI agent, tools, and message processing
+├── background-tasks/  # BullMQ processors (reply, follow-up)
+├── common/            # crypto (message encryption), logging, filters
+├── config/            # typed config service (env vars)
+├── prisma/            # Prisma service
+└── utils/             # shared helpers and the WB client
 ```
 
-## Compile and run the project
+---
+
+## Getting started
+
+### Requirements
+
+- Node.js 20+
+- PostgreSQL database
+- Redis
+- The WB service running (for live WhatsApp)
+
+### Setup
 
 ```bash
-# build redis container
-$ docker compose build
+# 1. Install dependencies
+npm install
 
-# run redis container
-$ docker compose up
+# 2. Create a .env file (see below) and set your values
 
+# 3. Apply database migrations
+npm run migrations:run
+
+# 4. Start in development
+npm run start:dev
+```
+
+The API runs on `http://localhost:3000` with the prefix `/api/v1`.
+Swagger docs are available at `http://localhost:3000/api`.
+
+### Environment variables
+
+```env
+PORT=3000
+NODE_ENV=development
+DATABASE_URL=postgresql://user:password@host:5432/chatpilot?schema=public
+
+GEMINI_API_KEY=your_google_gemini_api_key
+REDIS_URL=redis://localhost:6379
+
+JWT_SECRET=your_jwt_secret            # also used to encrypt stored messages
+JWT_REFRESH_SECRET=your_refresh_secret
+
+FRONTEND_URL=http://localhost:3001
+WB_BASE_URL=http://localhost:3002     # the WhatsApp connector service
+
+SUPABASE_STORAGE_URL=...              # for media uploads
+SUPABASE_SERVICE_KEY=...
+
+BULL_BOARD_USER=admin                 # queue dashboard auth
+BULL_BOARD_PASSWORD=password
+```
+
+---
+
+## Useful scripts
+
+| Command | What it does |
+|---|---|
+| `npm run start:dev` | Start with hot reload |
+| `npm run start` | Run migrations then start |
+| `npm run build` | Build for production |
+| `npm run migrations:run` | Apply Prisma migrations |
+| `npm run test` | Run tests |
+| `npm run lint:fix` | Lint and auto-fix |
+
+---
+
+## Running with Docker
+
+A `Dockerfile` and `docker-compose.yml` are included. In production the full system runs
+as containers behind Nginx:
+
+```
+postgres · redis · chatpilot (this) · whatsapp-bot · frontend
 ```
 
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+docker compose up -d
 ```
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ yarn run test
+## How a message flows
 
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ yarn install -g mau
-$ mau deploy
+Customer (WhatsApp)
+        │
+        ▼
+   WB service  ──webhook──►  ChatPilot API
+                                  │
+                       loads company + history
+                                  │
+                          Gemini AI agent
+                          (text + tools)
+                                  │
+                    encrypted save to PostgreSQL
+                                  │
+        ◄────── reply sent back through WB ──────
+        ▼
+Customer (WhatsApp)
 ```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
