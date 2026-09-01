@@ -436,6 +436,13 @@ export class CompanyController {
         messages.push({ message: part })
       }
     }
+
+    // A human replying from the dashboard takes over the conversation, so the AI
+    // stops auto-replying to this contact until it is switched back on.
+    await this.contactService.updateContact(contactId, {
+      is_bot_activated: false,
+    })
+
     return messages
   }
 }
